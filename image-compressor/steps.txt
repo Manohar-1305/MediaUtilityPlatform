@@ -2,6 +2,9 @@ docker build -t image-compressor:latest .
 
 docker run -d --name image-compressor --network media-tools-network -p 5013:5013 --restart unless-stopped image-compressor:latest
 
+# Enable Redis
+docker exec image-compressor python -c 'import redis_cache_hooks; print("Redis cache hooks imported successfully")'
+
 docker ps
 
 docker logs --tail 50 image-compressor
