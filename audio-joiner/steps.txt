@@ -1,4 +1,14 @@
-cd ~/website/without-db/audio-joiner
-docker build -t audio-joiner:latest .
-docker rm -f audio-joiner 2>/dev/null || true
-docker run -d --name audio-joiner --network media-tools-network --restart unless-stopped -p 5002:5002 audio-joiner:latest
+cd ~/website/without-db/audio-cutter
+docker build -t audio-cutter:latest .
+docker rm -f audio-cutter 2>/dev/null || true
+docker run -d --name audio-cutter --network media-tools-network --restart unless-stopped -p 5001:5001 audio-cutter:latest
+docker network connect media-tools-network audio-cutter
+
+# Enable caching of Redis
+docker exec audio-cutter python -c 'import redis_cache_hooks; print("Redis cache hooks imported successfully")'
+
+curl.exe http://127.0.0.1:5000/audio-cutter/health
+curl.exe http://127.0.0.1:5000/audio-cutter/health
+
+# Check in redis
+docker exec redis redis-cli -a '54412f5ba3ae950d53051902c238f0d46852599833631754068b7e949916d8d7' --scan --pattern 'media-tools:conversion:*' | while read key; do printf '\nKEY: %s\n' "$key"; docker exec redis redis-cli -a '54412f5ba3ae950d53051902c238f0d46852599833631754068b7e949916d8d7' STRLEN "$key"; docker exec redis redis-cli -a '54412f5ba3ae950d53051902c238f0d46852599833631754068b7e949916d8d7' TTL "$key"; done
