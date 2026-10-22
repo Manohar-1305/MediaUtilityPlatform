@@ -1,0 +1,7 @@
+Flask
+Werkzeug
+Flask
+requests
+PyMySQL
+gunicorn
+redis>=5.0,<7.0

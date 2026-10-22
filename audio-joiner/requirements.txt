@@ -1,0 +1,3 @@
+Flask
+gunicorn
+redis>=5,<7

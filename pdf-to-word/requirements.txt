@@ -1,0 +1,5 @@
+Flask
+pypdf
+python-docxredis>=5,<7
+
+redis>=5,<7
