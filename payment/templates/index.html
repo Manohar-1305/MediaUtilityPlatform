@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111827" />
+    <title>{{ payment_title | default("Support Our Work") }}</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 40px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: Inter, "Segoe UI", Arial, sans-serif;
+        color: #f8fafc;
+        background:
+          radial-gradient(
+            ellipse at 15% 20%,
+            rgba(124, 58, 237, 0.38),
+            transparent 38%
+          ),
+          radial-gradient(
+            ellipse at 85% 75%,
+            rgba(14, 165, 233, 0.3),
+            transparent 40%
+          ),
+          linear-gradient(135deg, #0f172a, #172554 50%, #312e81);
+        background-attachment: fixed;
+      }
+
+      .payment-card {
+        width: 100%;
+        max-width: 470px;
+        padding: 36px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.09);
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.32);
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+      }
+
+      .brand-icon {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 22px;
+        background: linear-gradient(135deg, #fb7185, #e11d48);
+        box-shadow: 0 12px 30px rgba(225, 29, 72, 0.3);
+        font-size: 35px;
+        font-weight: 800;
+      }
+
+      h1 {
+        margin: 0;
+        text-align: center;
+        font-size: 29px;
+        font-weight: 800;
+        letter-spacing: -0.7px;
+        overflow-wrap: anywhere;
+      }
+
+      .description {
+        margin: 12px 0 28px;
+        color: #cbd5e1;
+        text-align: center;
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 9px;
+        color: #e2e8f0;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+      }
+
+      input {
+        width: 100%;
+        height: 52px;
+        padding: 0 16px;
+        border: 1px solid rgba(255, 255, 255, 0.17);
+        border-radius: 13px;
+        outline: none;
+        background: rgba(15, 23, 42, 0.55);
+        color: #ffffff;
+        font-size: 15px;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+
+      input::placeholder {
+        color: #94a3b8;
+      }
+
+      input:focus {
+        border-color: #a5b4fc;
+        box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.18);
+      }
+
+      .upi-details {
+        margin: 22px 0;
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        border-radius: 15px;
+        background: rgba(15, 23, 42, 0.35);
+      }
+
+      .upi-label {
+        margin-bottom: 8px;
+        color: #94a3b8;
+        font-size: 12px;
+      }
+
+      .upi-id {
+        color: #c7d2fe;
+        font-size: 15px;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+      }
+
+      .primary-button,
+      .upi-link {
+        width: 100%;
+        min-height: 53px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 14px 18px;
+        border: 0;
+        border-radius: 14px;
+        background: linear-gradient(100deg, #f43f5e, #e11d48);
+        box-shadow: 0 10px 24px rgba(225, 29, 72, 0.23);
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 800;
+        text-align: center;
+        text-decoration: none;
+        cursor: pointer;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s,
+          filter 0.2s;
+      }
+
+      .primary-button:hover,
+      .upi-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px rgba(225, 29, 72, 0.32);
+        filter: brightness(1.08);
+      }
+
+      .primary-button:active,
+      .upi-link:active {
+        transform: translateY(0);
+      }
+
+      #qr-section {
+        display: none;
+        margin-top: 28px;
+        padding-top: 26px;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        text-align: center;
+        animation: appear 0.35s ease;
+      }
+
+      @keyframes appear {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      #qr-section h2 {
+        margin: 0 0 9px;
+        font-size: 22px;
+      }
+
+      .qr-instruction {
+        margin: 0 0 18px;
+        color: #cbd5e1;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .amount-display {
+        margin-bottom: 20px;
+        color: #86efac;
+        font-size: 32px;
+        font-weight: 800;
+      }
+
+      #qrcode {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: fit-content;
+        max-width: 100%;
+        min-height: 0;
+        margin: 0 auto 22px;
+        padding: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        background: #ffffff;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+      }
+
+      #qrcode img,
+      #qrcode canvas {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
+
+      .upi-link {
+        background: linear-gradient(100deg, #6366f1, #4f46e5);
+        box-shadow: 0 10px 24px rgba(79, 70, 229, 0.25);
+      }
+
+      .upi-link:hover {
+        box-shadow: 0 14px 30px rgba(79, 70, 229, 0.35);
+      }
+
+      .notice {
+        margin: 25px 0 0;
+        color: #94a3b8;
+        font-size: 11px;
+        line-height: 1.7;
+        text-align: center;
+      }
+
+      .error {
+        display: none;
+        margin: 12px 0 0;
+        padding: 12px;
+        border: 1px solid rgba(248, 113, 113, 0.35);
+        border-radius: 10px;
+        background: rgba(127, 29, 29, 0.3);
+        color: #fecaca;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding: 20px 12px;
+        }
+
+        .payment-card {
+          padding: 27px 20px;
+          border-radius: 23px;
+        }
+
+        h1 {
+          font-size: 25px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="payment-card">
+      <div class="brand-icon" aria-hidden="true">₹</div>
+
+      <h1>{{ payment_title | default("Support Our Work") }}</h1>
+
+      <p class="description">
+        Your contribution helps us keep improving. Choose an amount below and
+        pay easily using any UPI app.
+      </p>
+
+      <form id="payment-form">
+        <div class="form-group">
+          <label for="amount">CONTRIBUTION AMOUNT (₹)</label>
+          <input
+            type="number"
+            id="amount"
+            name="amount"
+            min="1"
+            max="1000000"
+            step="0.01"
+            placeholder="Enter amount, e.g. 100"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="name">YOUR NAME (OPTIONAL)</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            maxlength="100"
+            placeholder="Enter your name"
+            autocomplete="name"
+          />
+        </div>
+
+        <button type="submit" class="primary-button">
+          Generate Payment QR
+        </button>
+
+        <p id="error-message" class="error" role="alert"></p>
+      </form>
+
+      <div class="upi-details">
+        <div class="upi-label">PAYING THROUGH UPI</div>
+        <div class="upi-id" id="upi-id">{{ payment_upi_id | default("") }}</div>
+      </div>
+
+      <section id="qr-section" aria-live="polite">
+        <h2>Scan & Pay</h2>
+
+        <p class="qr-instruction">
+          Scan this QR code using your preferred UPI app.
+        </p>
+
+        <div class="amount-display" id="amount-display"></div>
+
+        <div id="qrcode"></div>
+
+        <a href="#" id="open-upi" class="upi-link"> Open UPI App </a>
+      </section>
+
+      <p class="notice">
+        A QR code is generated for the amount you enter. This page does not
+        verify transactions. Confirm payment in your UPI app or bank account.
+      </p>
+    </main>
+
+    <script>
+      const configuredUpiId = {{ payment_upi_id | default("") | tojson }};
+
+      const form = document.getElementById("payment-form");
+      const amountInput = document.getElementById("amount");
+      const nameInput = document.getElementById("name");
+      const qrSection = document.getElementById("qr-section");
+      const qrContainer = document.getElementById("qrcode");
+      const amountDisplay = document.getElementById("amount-display");
+      const errorMessage = document.getElementById("error-message");
+      const openUpiLink = document.getElementById("open-upi");
+
+      function showError(message) {
+          errorMessage.textContent = message;
+          errorMessage.style.display = "block";
+      }
+
+      function clearError() {
+          errorMessage.textContent = "";
+          errorMessage.style.display = "none";
+      }
+
+      form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          clearError();
+
+          if (typeof QRCode === "undefined") {
+              showError("The QR generator could not load. Check your internet connection and try again.");
+              return;
+          }
+
+          const upiId = configuredUpiId.trim();
+          const amount = Number(amountInput.value);
+          const name = nameInput.value.trim();
+
+          if (!upiId || !/^[^\s@]+@[^\s@]+$/.test(upiId)) {
+              showError("Please configure a valid UPI ID.");
+              return;
+          }
+
+          if (!Number.isFinite(amount) || amount < 1 || amount > 1000000) {
+              showError("Enter an amount between ₹1 and ₹10,00,000.");
+              return;
+          }
+
+          const paymentDetails = new URLSearchParams({
+              pa: upiId,
+              pn: name || "Website Contribution",
+              am: amount.toFixed(2),
+              cu: "INR",
+              tn: "Website contribution"
+          });
+
+          const upiUrl = "upi://pay?" + paymentDetails.toString();
+
+          qrContainer.replaceChildren();
+
+          new QRCode(qrContainer, {
+              text: upiUrl,
+              width: 240,
+              height: 240,
+              colorDark: "#111827",
+              colorLight: "#ffffff",
+              correctLevel: QRCode.CorrectLevel.H
+          });
+
+          amountDisplay.textContent = amount.toLocaleString("en-IN", {
+              style: "currency",
+              currency: "INR"
+          });
+
+          openUpiLink.href = upiUrl;
+          qrSection.style.display = "block";
+
+          qrSection.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest"
+          });
+      });
+    </script>
+  </body>
+</html>

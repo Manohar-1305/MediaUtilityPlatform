@@ -1,0 +1,2 @@
+docker build -t payment .
+docker run -d --name payment --network media-tools-network -p 5018:5018 payment
