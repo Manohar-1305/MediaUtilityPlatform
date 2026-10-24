@@ -1,11 +1,12 @@
 from redis_cache_hooks import init_redis_cache
 from redis_cache import cache_key, cache_get, cache_set
 
+import hashlib
 import io
 import os
 import logging
 
-from flask import Flask, render_template, request, send_file, jsonify
+from flask import Flask, render_template, request, send_file, jsonify, make_response
 from PIL import Image, ImageFile, UnidentifiedImageError
 from reportlab.lib.pagesizes import (
     A4, A3, A5, LETTER, LEGAL, landscape, portrait
@@ -56,6 +57,7 @@ def health():
 @app.post("/convert")
 def convert():
     images = []
+    cache_key_value = None
 
     try:
         uploaded_files = request.files.getlist("images")
@@ -86,6 +88,7 @@ def convert():
         if margin_name not in MARGINS:
             return jsonify(error="Invalid margin option."), 400
 
+        image_data = []
         for uploaded_file in uploaded_files:
             if not uploaded_file.filename:
                 continue
@@ -99,9 +102,19 @@ def convert():
                 ), 400
 
             try:
-                with Image.open(uploaded_file.stream) as source:
+                file_bytes = uploaded_file.stream.read()
+                uploaded_file.stream.seek(0)
+
+                image_data.append({
+                    "filename": filename,
+                    "extension": extension,
+                    "bytes": file_bytes,
+                })
+
+                with Image.open(io.BytesIO(file_bytes)) as source:
                     source.load()
                     images.append(source.convert("RGB"))
+
             except (UnidentifiedImageError, OSError, ValueError) as exc:
                 logger.exception("Unable to process image %s", filename)
                 return jsonify(
@@ -110,6 +123,37 @@ def convert():
 
         if not images:
             return jsonify(error="No valid images received."), 400
+
+        cache_input = hashlib.sha256()
+        for item in image_data:
+            cache_input.update(item["filename"].encode("utf-8"))
+            cache_input.update(b"\0")
+            cache_input.update(item["bytes"])
+            cache_input.update(b"\0")
+
+        settings = {
+            "service": "image-to-pdf",
+            "orientation": orientation,
+            "page_size": page_size_name,
+            "margin": margin_name,
+        }
+
+        cache_key_value = cache_key(
+            "image-to-pdf",
+            cache_input.digest(),
+            settings,
+        )
+
+        cached_pdf = cache_get(cache_key_value)
+        if cached_pdf is not None:
+            logger.info("Redis cache HIT for image-to-pdf")
+            response = make_response(cached_pdf)
+            response.headers["Content-Type"] = "application/pdf"
+            response.headers[
+                "Content-Disposition"
+            ] = 'attachment; filename="converted-images.pdf"'
+            response.headers["X-Redis-Cache"] = "HIT"
+            return response
 
         base_size = PAGE_SIZES[page_size_name]
         page_dimensions = (
@@ -156,15 +200,27 @@ def convert():
             pdf.showPage()
 
         pdf.save()
-        output.seek(0)
+        pdf_bytes = output.getvalue()
 
-        return send_file(
-            output,
-            mimetype="application/pdf",
-            as_attachment=True,
-            download_name="converted-images.pdf",
-            max_age=0,
-        )
+        if cache_key_value:
+            if cache_set(cache_key_value, pdf_bytes):
+                logger.info(
+                    "Redis cache MISS: stored image-to-pdf output (%s bytes)",
+                    len(pdf_bytes),
+                )
+            else:
+                logger.info(
+                    "Image-to-PDF output not cached (size limit or Redis unavailable)"
+                )
+
+        response = make_response(pdf_bytes)
+        response.headers["Content-Type"] = "application/pdf"
+        response.headers[
+            "Content-Disposition"
+        ] = 'attachment; filename="converted-images.pdf"'
+        response.headers["X-Redis-Cache"] = "MISS"
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     except Exception as exc:
         logger.exception("Image-to-PDF conversion failed")
