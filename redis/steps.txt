@@ -1,14 +1,15 @@
 # Create Redis
 docker volume create media-redis-data
-docker run -d --name redis --network media-tools-network --restart unless-stopped -v media-redis-data:/data redis:7-alpine redis-server --appendonly yes --appendfsync everysec
 docker run -d --name redis --network media-tools-network --restart unless-stopped -v media-redis-data:/data redis:7-alpine redis-server --appendonly yes --appendfsync everysec --requirepass 'Redis123!'
 
-
 # Redis Dashboard
+docker volume create redisinsight-data
 docker run -d --name redisinsight --network media-tools-network --restart unless-stopped -p 5540:5540 -v redisinsight-data:/data redis/redisinsight:latest
 docker exec redis redis-cli -a 'Redis123!' PING
 
 =======================================================================================================
+docker volume create media-redis-data
+docker run -d --name redis --network media-tools-network --restart unless-stopped -v media-redis-data:/data redis:7-alpine redis-server --appendonly yes --appendfsync everysec
 echo "REDIS_PASSWORD=$(openssl rand -hex 32)" >> .env && chmod 600 .env && grep '^REDIS_PASSWORD=' .env
 docker volume create redisinsight-data && docker run -d --name redisinsight --network media-tools-network --restart unless-stopped -p 5540:5540 -v redisinsight-data:/data -e RI_REDIS_HOST=redis -e RI_REDIS_PORT=6379 -e RI_REDIS_ALIAS=media-tools-redis redis/redisinsight:latest
 
