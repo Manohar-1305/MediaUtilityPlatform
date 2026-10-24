@@ -1,19 +1,18 @@
-FROM golang:1.23-alpine AS builder
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PORT=5016
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
-RUN go mod download
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
-RUN go build -o micro-bot .
+COPY app.py .
+COPY config.py .
+COPY templates ./templates
 
-FROM alpine:3.21
+EXPOSE 5016
 
-WORKDIR /app
-
-COPY --from=builder /app/micro-bot .
-
-EXPOSE 5017
-
-CMD ["./micro-bot"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5016", "--workers", "2", "--timeout", "60", "app:app"]
