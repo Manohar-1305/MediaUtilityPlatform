@@ -1,0 +1,1 @@
+ docker build -t payment . && (docker rm -f payment 2>/dev/null || true) && docker run -d --name payment --network media-tools-network --restart unless-stopped -e PORT=5016 -p 5016:5016 payment
