@@ -1,0 +1,7 @@
+
+go mod tidy
+go build -o micro-bot.exe .
+go run .
+
+docker build -t support-bot .
+docker run -d --name support-bot --network media-tools-network -p 5017:5017 support-bot

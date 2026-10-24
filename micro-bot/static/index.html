@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Alina | Media Tools Support</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        font-family: Arial, sans-serif;
+        color: #202124;
+        background: #fff;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .chat-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        color: #fff;
+        background: linear-gradient(135deg, #4f46e5, #9333ea);
+        flex-shrink: 0;
+      }
+
+      .bot-avatar {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #ffffff30;
+        font-size: 22px;
+      }
+
+      .header-text {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .header-text h1 {
+        margin: 0;
+        font-size: 17px;
+      }
+
+      .header-text p {
+        margin: 5px 0 0;
+        font-size: 12px;
+        color: #ede9fe;
+      }
+
+      .online-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-right: 5px;
+        border-radius: 50%;
+        background: #4ade80;
+      }
+
+      .chat-messages {
+        flex: 1;
+        min-height: 0;
+        padding: 16px 14px;
+        overflow-y: auto;
+        background: #f8fafc;
+        scroll-behavior: smooth;
+      }
+
+      .message {
+        display: flex;
+        margin-bottom: 14px;
+      }
+
+      .message.user {
+        justify-content: flex-end;
+      }
+
+      .message-content {
+        max-width: 90%;
+        padding: 11px 13px;
+        border-radius: 13px;
+        font-size: 13px;
+        line-height: 1.55;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+
+      .message.bot .message-content {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-bottom-left-radius: 4px;
+        color: #374151;
+      }
+
+      .message.user .message-content {
+        color: #fff;
+        background: #4f46e5;
+        border-bottom-right-radius: 4px;
+      }
+
+      .message-time {
+        display: block;
+        margin-top: 5px;
+        font-size: 10px;
+        opacity: 0.65;
+      }
+
+      .quick-questions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-top: 11px;
+      }
+
+      .quick-question {
+        padding: 8px 10px;
+        border: 1px solid #c7d2fe;
+        border-radius: 16px;
+        background: #eef2ff;
+        color: #4338ca;
+        font-size: 11px;
+        cursor: pointer;
+        text-align: left;
+      }
+
+      .quick-question:hover {
+        background: #e0e7ff;
+      }
+
+      .quick-question:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .chat-status {
+        padding: 6px 14px;
+        color: #64748b;
+        background: #fff;
+        font-size: 11px;
+        border-top: 1px solid #e5e7eb;
+        flex-shrink: 0;
+      }
+
+      .chat-input-area {
+        display: flex;
+        align-items: flex-end;
+        gap: 9px;
+        padding: 12px;
+        background: #fff;
+        border-top: 1px solid #e5e7eb;
+        flex-shrink: 0;
+      }
+
+      #question-input {
+        flex: 1;
+        min-width: 0;
+        min-height: 42px;
+        max-height: 110px;
+        resize: none;
+        padding: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        outline: none;
+        font-family: inherit;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      #question-input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px #6366f11f;
+      }
+
+      #send-button {
+        width: 43px;
+        height: 43px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border: 0;
+        border-radius: 12px;
+        color: #fff;
+        background: #4f46e5;
+        cursor: pointer;
+      }
+
+      #send-button:hover {
+        background: #4338ca;
+      }
+
+      #send-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      #send-button svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .typing-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 42px;
+        min-height: 20px;
+      }
+
+      .typing-indicator span {
+        display: block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #818cf8;
+        animation: typing-bounce 1.1s infinite ease-in-out;
+      }
+
+      .typing-indicator span:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+
+      .typing-indicator span:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      .typing-label {
+        margin-left: 5px;
+        color: #6b7280;
+        font-size: 11px;
+      }
+
+      @keyframes typing-bounce {
+        0%,
+        60%,
+        100% {
+          transform: translateY(0);
+          opacity: 0.4;
+        }
+
+        30% {
+          transform: translateY(-5px);
+          opacity: 1;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .typing-indicator span {
+          animation: none;
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 400px) {
+        .chat-header {
+          padding: 12px;
+        }
+
+        .chat-messages {
+          padding: 12px 9px;
+        }
+
+        .message-content {
+          max-width: 96%;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="chat-header">
+      <div class="bot-avatar" aria-hidden="true">✦</div>
+      <div class="header-text">
+        <h1>Alina</h1>
+        <p>
+          <span class="online-indicator"></span>
+          Media Tools Support Assistant
+        </p>
+      </div>
+    </header>
+
+    <main class="chat-messages" id="chat-messages" aria-live="polite"></main>
+    <div class="chat-status" id="chat-status">Connecting to Alina...</div>
+
+    <form class="chat-input-area" id="chat-form">
+      <textarea
+        id="question-input"
+        placeholder="Describe the issue you're facing..."
+        rows="1"
+        maxlength="2000"
+        aria-label="Your answer"
+        required
+        disabled
+      ></textarea>
+      <button id="send-button" type="submit" aria-label="Send answer" disabled>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M22 2 11 13"></path>
+          <path d="m22 2-7 20-4-9-9-4Z"></path>
+        </svg>
+      </button>
+    </form>
+
+    <script>
+      const messages = document.getElementById("chat-messages");
+      const form = document.getElementById("chat-form");
+      const input = document.getElementById("question-input");
+      const sendButton = document.getElementById("send-button");
+      const status = document.getElementById("chat-status");
+
+      let socket = null;
+      let reconnectTimer = null;
+      let manuallyClosed = false;
+      let waitingForReply = false;
+      let typingRow = null;
+      let conversationStarted = false;
+      let conversationEnded = false;
+      let responseSequence = 0;
+      let initialWelcomeReceived = false;
+      let pendingMessages = Promise.resolve();
+
+      function setStatus(text) {
+        status.textContent = text;
+      }
+
+      function scrollToBottom() {
+        messages.scrollTop = messages.scrollHeight;
+      }
+
+      function addMessage(text, sender) {
+        const row = document.createElement("div");
+        row.className = `message ${sender}`;
+
+        const content = document.createElement("div");
+        content.className = "message-content";
+
+        const textElement = document.createElement("span");
+        textElement.className = "response-text";
+        textElement.textContent = text;
+        content.appendChild(textElement);
+
+        const time = document.createElement("span");
+        time.className = "message-time";
+        time.textContent = new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        content.appendChild(time);
+        row.appendChild(content);
+        messages.appendChild(row);
+        scrollToBottom();
+
+        return row;
+      }
+
+      function showTypingIndicator() {
+        if (typingRow && typingRow.isConnected) return;
+
+        typingRow = document.createElement("div");
+        typingRow.className = "message bot";
+        typingRow.id = "bot-typing";
+
+        const content = document.createElement("div");
+        content.className = "message-content";
+        content.setAttribute("aria-label", "Alina is typing");
+
+        const indicator = document.createElement("div");
+        indicator.className = "typing-indicator";
+
+        for (let i = 0; i < 3; i++) {
+          indicator.appendChild(document.createElement("span"));
+        }
+
+        const label = document.createElement("span");
+        label.className = "typing-label";
+        label.textContent = "Alina is typing";
+
+        content.appendChild(indicator);
+        content.appendChild(label);
+        typingRow.appendChild(content);
+        messages.appendChild(typingRow);
+        scrollToBottom();
+      }
+
+      function removeTypingIndicator() {
+        if (typingRow) {
+          typingRow.remove();
+          typingRow = null;
+        }
+      }
+
+      function wait(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      async function typeBotResponse(text) {
+        const sequence = ++responseSequence;
+
+        removeTypingIndicator();
+
+        const row = addMessage("", "bot");
+        const textElement = row.querySelector(".response-text");
+
+        for (const character of text) {
+          if (sequence !== responseSequence) return;
+
+          textElement.textContent += character;
+          scrollToBottom();
+
+          if (".!?".includes(character)) {
+            await wait(100);
+          } else {
+            await wait(18);
+          }
+        }
+      }
+
+      function addServiceChoices(services) {
+        const row = document.createElement("div");
+        row.className = "message bot";
+
+        const content = document.createElement("div");
+        content.className = "message-content";
+        content.textContent = "Select the affected service:";
+
+        const choices = document.createElement("div");
+        choices.className = "quick-questions";
+
+        services.forEach((service) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "quick-question";
+          button.textContent = service;
+
+          button.addEventListener("click", () => {
+            if (
+              !socket ||
+              socket.readyState !== WebSocket.OPEN ||
+              waitingForReply ||
+              conversationEnded
+            ) {
+              return;
+            }
+
+            sendQuestion(service);
+          });
+
+          choices.appendChild(button);
+        });
+
+        content.appendChild(choices);
+        row.appendChild(content);
+        messages.appendChild(row);
+        scrollToBottom();
+      }
+
+      function addOptionChoices(options) {
+        const row = document.createElement("div");
+        row.className = "message bot";
+
+        const content = document.createElement("div");
+        content.className = "message-content";
+        content.textContent = "Choose an answer:";
+
+        const choices = document.createElement("div");
+        choices.className = "quick-questions";
+
+        options.forEach((option) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "quick-question";
+          button.textContent = option;
+
+          button.addEventListener("click", () => {
+            if (
+              !socket ||
+              socket.readyState !== WebSocket.OPEN ||
+              waitingForReply ||
+              conversationEnded
+            ) {
+              return;
+            }
+
+            sendQuestion(option);
+          });
+
+          choices.appendChild(button);
+        });
+
+        content.appendChild(choices);
+        row.appendChild(content);
+        messages.appendChild(row);
+        scrollToBottom();
+      }
+
+      function detectConversationEnd(text) {
+        return (
+          text.includes("The issue is still unresolved.") ||
+          text.includes("Thank you for using Media Tools Support.")
+        );
+      }
+
+      async function handleBotMessage(data) {
+        const text = data.text || "";
+
+        if (text) {
+          await typeBotResponse(text);
+        }
+
+        if (data.type === "services" && Array.isArray(data.services)) {
+          addServiceChoices(data.services);
+        }
+
+        if (data.type === "options" && Array.isArray(data.options)) {
+          addOptionChoices(data.options);
+        }
+
+        if (detectConversationEnd(text)) {
+          conversationEnded = true;
+          waitingForReply = false;
+          setStatus("Chat ended");
+          input.disabled = true;
+          sendButton.disabled = true;
+          input.placeholder = "This conversation has ended.";
+          removeTypingIndicator();
+
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.close(1000, "Conversation ended");
+          }
+        }
+      }
+
+      function connectWebSocket() {
+        if (
+          socket &&
+          (socket.readyState === WebSocket.OPEN ||
+            socket.readyState === WebSocket.CONNECTING)
+        ) {
+          return;
+        }
+
+        if (conversationEnded || manuallyClosed) return;
+
+        const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+        const wsUrl = `${protocol}//${location.hostname}:5017/ws`;
+
+        showTypingIndicator();
+        setStatus("Connecting to Alina...");
+
+        socket = new WebSocket(wsUrl);
+
+        socket.addEventListener("open", () => {
+          setStatus("Connected to Alina");
+        });
+
+        socket.addEventListener("message", (event) => {
+          pendingMessages = pendingMessages
+            .then(async () => {
+              let data;
+
+              try {
+                data = JSON.parse(event.data);
+              } catch {
+                data = { type: "message", text: event.data };
+              }
+
+              const text = data.text || "";
+
+              if (
+                !initialWelcomeReceived &&
+                text.includes("Welcome to Chat Desk")
+              ) {
+                initialWelcomeReceived = true;
+                conversationStarted = true;
+
+                await handleBotMessage({
+                  type: "message",
+                  text: "Hi, I'm Alina. Welcome to Chat Desk, how may I help you?",
+                });
+
+                waitingForReply = false;
+                input.disabled = false;
+                sendButton.disabled = false;
+                input.placeholder = "Describe the issue you're facing...";
+                input.focus();
+                return;
+              }
+
+              // Ignore the initial service prompt from an older backend.
+              // The correct backend sends the service prompt after the user
+              // describes the problem.
+              if (
+                initialWelcomeReceived &&
+                text === "Which microservice would you like help with?" &&
+                messages.querySelector(".response-text") &&
+                !messages.querySelector(".user")
+              ) {
+                removeTypingIndicator();
+                return;
+              }
+
+              waitingForReply = false;
+              input.disabled = true;
+              sendButton.disabled = true;
+
+              await handleBotMessage(data);
+
+              if (
+                !conversationEnded &&
+                socket &&
+                socket.readyState === WebSocket.OPEN
+              ) {
+                input.disabled = false;
+                sendButton.disabled = false;
+                input.focus();
+              }
+            })
+            .catch((error) => {
+              console.error("Alina message handling failed:", error);
+              removeTypingIndicator();
+
+              if (!conversationEnded) {
+                input.disabled = false;
+                sendButton.disabled = false;
+                setStatus("Connected to Alina");
+              }
+            });
+        });
+
+        socket.addEventListener("error", () => {
+          removeTypingIndicator();
+          setStatus("Unable to connect to Alina");
+          sendButton.disabled = true;
+        });
+
+        socket.addEventListener("close", () => {
+          removeTypingIndicator();
+          waitingForReply = false;
+
+          if (conversationEnded || manuallyClosed) return;
+
+          sendButton.disabled = true;
+          input.disabled = true;
+
+          setStatus("Disconnected. Reconnecting...");
+          clearTimeout(reconnectTimer);
+          reconnectTimer = setTimeout(connectWebSocket, 3000);
+        });
+      }
+
+      function sendQuestion(question) {
+        const text = question.trim();
+
+        if (
+          !text ||
+          !socket ||
+          socket.readyState !== WebSocket.OPEN ||
+          waitingForReply ||
+          conversationEnded
+        ) {
+          return;
+        }
+
+        addMessage(text, "user");
+
+        waitingForReply = true;
+        sendButton.disabled = true;
+        input.disabled = true;
+
+        showTypingIndicator();
+        socket.send(JSON.stringify({ text }));
+
+        input.value = "";
+        input.style.height = "42px";
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        sendQuestion(input.value);
+      });
+
+      input.addEventListener("input", () => {
+        input.style.height = "42px";
+        input.style.height = `${Math.min(input.scrollHeight, 110)}px`;
+      });
+
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          form.requestSubmit();
+        }
+      });
+
+      window.addEventListener("beforeunload", () => {
+        manuallyClosed = true;
+        clearTimeout(reconnectTimer);
+
+        if (socket) {
+          socket.close();
+        }
+      });
+
+      connectWebSocket();
+    </script>
+  </body>
+</html>
