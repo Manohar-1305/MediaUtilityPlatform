@@ -1,0 +1,4 @@
+Create Mysqldb
+Create Redis
+Build & deploy gateway
+Build & deploy userservice
