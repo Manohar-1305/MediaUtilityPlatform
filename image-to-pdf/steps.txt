@@ -5,7 +5,9 @@ docker build -t image-to-pdf . && (docker rm -f image-to-pdf 2>/dev/null || true
 # Import Redis
 docker exec image-to-pdf sh -c 'python -c "import redis; r=redis.Redis(host=\"redis\",port=6379,password=\"Redis123!\",decode_responses=True); print(\"Redis connected:\",r.ping())"'
 
-docker exec audio-to-video python -c 'import redis_cache_hooks,redis,os; r=redis.Redis(host=os.getenv("REDIS_HOST"),port=int(os.getenv("REDIS_PORT")),db=int(os.getenv("REDIS_DB")),password=os.getenv("REDIS_PASSWORD")); print("Redis cache hooks imported successfully"); print("Redis:",r.ping()); print("Keys:",r.keys("*"))'
+# Import Redis caching
+docker exec image-to-pdf python -c 'import redis_cache_hooks,redis,os; r=redis.Redis(host=os.getenv("REDIS_HOST"),port=int(os.getenv("REDIS_PORT")),db=int(os.getenv("REDIS_DB")),password=os.getenv("REDIS_PASSWORD")); print("Redis cache hooks imported successfully"); print("Redis:",r.ping()); print("Keys:",r.keys("*"))'
+
 
 docker logs -f image-to-pdf
 
