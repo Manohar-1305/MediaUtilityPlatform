@@ -1,0 +1,30 @@
+docker volume create media-mysql-data && docker run -d --name media-mysql --network media-tools-network --restart unless-stopped -p 127.0.0.1:3307:3306 -e MYSQL_ROOT_PASSWORD='CHANGE_ROOT_PASSWORD' -e MYSQL_DATABASE='media_tools' -e MYSQL_USER='media_user' -e MYSQL_PASSWORD='CHANGE_THIS_PASSWORD' -v media-mysql-data:/var/lib/mysql mysql:8.4
+
+# Create Redis
+docker volume create media-redis-data
+docker run -d --name redis --network media-tools-network --restart unless-stopped -v media-redis-data:/data redis:7-alpine redis-server --appendonly yes --appendfsync everysec
+
+# Redis Dashboard
+echo "REDIS_PASSWORD=$(openssl rand -hex 32)" >> .env && chmod 600 .env && grep '^REDIS_PASSWORD=' .env
+docker volume create redisinsight-data && docker run -d --name redisinsight --network media-tools-network --restart unless-stopped -p 5540:5540 -v redisinsight-data:/data -e RI_REDIS_HOST=redis -e RI_REDIS_PORT=6379 -e RI_REDIS_ALIAS=media-tools-redis redis/redisinsight:latest
+
+# Test Redis working with app
+curl -s -X POST http://127.0.0.1:5006/login -H 'Content-Type: application/json' -d '{"username":"redis-test-invalid-user","password":"WrongPassword123!"}'; echo; docker exec redis redis-cli -a "$(grep '^REDIS_PASSWORD=' /home/ubuntu/media-tools-microservices/without-db/user-service/.env | cut -d= -f2-)" KEYS 'media-tools:*'
+
+# Incorrect Login
+for email in $(docker exec media-mysql mysql -N -u media_user -p'CHANGE_THIS_PASSWORD' media_tools -e "SELECT email FROM users"); do hash=$(printf '%s' "$email" | tr '[:upper:]' '[:lower:]' | sha256sum | awk '{print $1}'); value=$(docker exec redis redis-cli --no-auth-warning -a "$(grep '^REDIS_PASSWORD=' .env | cut -d= -f2-)" GET "media-tools:login-attempts:$hash"); [ -n "$value" ] && echo "$email: $value failed attempts"; done
+
+# App incorrect login
+for key in $(docker exec redis redis-cli --no-auth-warning -a "$(grep '^REDIS_PASSWORD=' .env | cut -d= -f2-)" --scan --pattern 'media-tools:login-attempts:*'); do hash="${key##*:}"; for email in $(docker exec media-mysql mysql -N -u media_user -p'CHANGE_THIS_PASSWORD' media_tools -e "SELECT email FROM users"); do email_hash=$(printf '%s' "$email" | tr '[:upper:]' '[:lower:]' | sha256sum | awk '{print $1}'); if [ "$hash" = "$email_hash" ]; then attempts=$(docker exec redis redis-cli --no-auth-warning -a "$(grep '^REDIS_PASSWORD=' .env | cut -d= -f2-)" GET "$key"); echo "$email: $attempts failed attempts"; fi; done; done
+
+# Create user microservice
+cd /home/ubuntu/media-tools-microservices/without-db/user-service && docker build --no-cache -t user:latest . && (docker rm -f user 2>/dev/null || true) && docker run -d --name user --network media-tools-network --restart unless-stopped --env-file .env -p 5006:5006 user:latest && docker logs --tail 30 user
+
+# Check logs of container
+docker logs --tail 30 user
+
+
+
+cd /home/ubuntu/media-tools-microservices/with-db/user-service
+docker build --no-cache -t user:latest .
+docker run -d --name user --network media-tools-network --restart unless-stopped --env-file .env -p 5006:5006 user:latest
