@@ -1,8 +1,5 @@
 docker build -t audio-cutter:latest . && docker run -d --name audio-cutter --network media-tools-network --restart unless-stopped --env-file .env -e PORT=5001 -p 5001:5001 audio-cutter:latest 
 
-#Enable Redis
-docker exec audio-cutter python -c 'import redis_cache_hooks; print("Redis cache hooks imported successfully")'
-
 # Enable caching of Redis
 docker exec audio-cutter python -c 'import redis_cache_hooks; print("Redis cache hooks imported successfully")'
 
