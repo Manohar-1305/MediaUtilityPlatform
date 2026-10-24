@@ -4,6 +4,7 @@ docker run -d --name redis --network media-tools-network --restart unless-stoppe
 
 # Redis Dashboard
 echo "REDIS_PASSWORD=$(openssl rand -hex 32)" >> .env && chmod 600 .env && grep '^REDIS_PASSWORD=' .env
+sed -i '/^REDIS_PASSWORD=/d' redis/.env && printf 'REDIS_PASSWORD=%s\n' "$(openssl rand -hex 32)" >> redis/.env && chmod 600 redis/.env && grep '^REDIS_PASSWORD=' redis/.env
 docker volume create redisinsight-data && docker run -d --name redisinsight --network media-tools-network --restart unless-stopped -p 5540:5540 -v redisinsight-data:/data -e RI_REDIS_HOST=redis -e RI_REDIS_PORT=6379 -e RI_REDIS_ALIAS=media-tools-redis redis/redisinsight:latest
 
 # Test Redis working with app
