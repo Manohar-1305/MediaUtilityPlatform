@@ -1,6 +1,8 @@
 # Create Redis
 docker volume create media-redis-data
 docker run -d --name redis --network media-tools-network --restart unless-stopped -v media-redis-data:/data redis:7-alpine redis-server --appendonly yes --appendfsync everysec
+docker run -d --name redis --network media-tools-network --restart unless-stopped -v media-redis-data:/data redis:7-alpine redis-server --appendonly yes --appendfsync everysec --requirepass 'Redis123!'
+
 
 # Redis Dashboard
 echo "REDIS_PASSWORD=$(openssl rand -hex 32)" >> .env && chmod 600 .env && grep '^REDIS_PASSWORD=' .env
