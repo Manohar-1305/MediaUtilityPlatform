@@ -6,6 +6,10 @@ docker run -d --name redis --network media-tools-network --restart unless-stoppe
 echo "REDIS_PASSWORD=$(openssl rand -hex 32)" >> .env && chmod 600 .env && grep '^REDIS_PASSWORD=' .env
 docker volume create redisinsight-data && docker run -d --name redisinsight --network media-tools-network --restart unless-stopped -p 5540:5540 -v redisinsight-data:/data -e RI_REDIS_HOST=redis -e RI_REDIS_PORT=6379 -e RI_REDIS_ALIAS=media-tools-redis redis/redisinsight:latest
 
+# This works
+docker run -d --name redis --network media-tools-network --restart unless-stopped -v media-redis-data:/data redis:7-alpine redis-server --appendonly yes --appendfsync everysec --requirepass 'Redis123!'
+
+
 # Test Redis working with app
 curl -s -X POST http://127.0.0.1:5006/login -H 'Content-Type: application/json' -d '{"username":"redis-test-invalid-user","password":"WrongPassword123!"}'; echo; docker exec redis redis-cli -a "$(grep '^REDIS_PASSWORD=' /home/ubuntu/media-tools-microservices/without-db/user-service/.env | cut -d= -f2-)" KEYS 'media-tools:*'
 
