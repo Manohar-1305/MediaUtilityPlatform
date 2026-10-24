@@ -8,6 +8,8 @@ docker exec image-to-pdf sh -c 'python -c "import redis; r=redis.Redis(host=\"re
 # Import Redis caching
 docker exec image-to-pdf python -c 'import redis_cache_hooks,redis,os; r=redis.Redis(host=os.getenv("REDIS_HOST"),port=int(os.getenv("REDIS_PORT")),db=int(os.getenv("REDIS_DB")),password=os.getenv("REDIS_PASSWORD")); print("Redis cache hooks imported successfully"); print("Redis:",r.ping()); print("Keys:",r.keys("*"))'
 
+# Check if it is caching
+docker exec image-to-pdf python -c 'import redis_cache_hooks; print("Redis cache hooks imported successfully")'
 
 docker logs -f image-to-pdf
 
