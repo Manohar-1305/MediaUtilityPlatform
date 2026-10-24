@@ -1,11 +1,3 @@
-docker build -t image-to-pdf:latest .
-
-docker run -d --name image-to-pdf --network media-tools-network -p 5008:5008 --restart unless-stopped image-to-pdf:latest
-
-docker ps --filter name=image-to-pdf
-
-
-
 
 # Build Docker
 docker build -t image-to-pdf . && (docker rm -f image-to-pdf 2>/dev/null || true) && docker run -d --name image-to-pdf --network media-tools-network --restart unless-stopped --env-file ~/MediaUtilityPlatform/audio-cutter/.env -e PORT=5008 -p 5008:5008 image-to-pdf
@@ -14,3 +6,5 @@ docker build -t image-to-pdf . && (docker rm -f image-to-pdf 2>/dev/null || true
 docker exec image-to-pdf sh -c 'python -c "import redis; r=redis.Redis(host=\"redis\",port=6379,password=\"Redis123!\",decode_responses=True); print(\"Redis connected:\",r.ping())"'
 
 docker logs -f image-to-pdf
+
+docker ps --filter name=image-to-pdf
