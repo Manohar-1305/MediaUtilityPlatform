@@ -1,3 +1,6 @@
 docker build -t audio-joiner . && (docker rm -f audio-joiner 2>/dev/null || true) && docker run -d --name audio-joiner --network media-tools-network --env-file .env -e PORT=5002 -p 5002:5002 audio-joiner
 
 docker exec audio-joiner python -c 'import redis_cache_hooks; print("Redis cache hooks imported successfully")'
+
+# Enable Redis
+docker exec audio-joiner python -c "import redis,os; r=redis.Redis(host=os.getenv('REDIS_HOST'),port=int(os.getenv('REDIS_PORT')),db=int(os.getenv('REDIS_DB')),password=os.getenv('REDIS_PASSWORD')); print('Redis:',r.ping()); print('Keys:',r.keys('*'))"
