@@ -507,6 +507,68 @@ def pdf_to_jpg_proxy(path):
 def services_page():
     return send_from_directory(STATIC_DIR, "services.html")
 
+# Payment Service
+# Payment Service
+@app.route("/payment", methods=["GET"])
+@app.route("/payment/", methods=["GET"])
+def payment_page():
+    try:
+        upstream = requests.get(
+            f"{SERVICES['payment'].rstrip('/')}/",
+            timeout=(10, 30),
+        )
+        return Response(
+            upstream.content,
+            status=upstream.status_code,
+            content_type=upstream.headers.get(
+                "Content-Type", "text/html; charset=utf-8"
+            ),
+        )
+
+    except requests.Timeout:
+        return jsonify(error="Payment service timed out"), 504
+
+    except requests.RequestException as exc:
+        app.logger.error("Request to payment service failed: %s", exc)
+        return jsonify(error="Payment service unavailable"), 502
+
+
+@app.route("/payment/submit", methods=["POST"])
+def payment_submit():
+    return forward_request("payment", "submit")
+
+# suport service
+@app.route("/support-bot/", defaults={"path": ""})
+@app.route("/support-bot/<path:path>")
+def support_bot(path):
+    import requests
+    from flask import Response, request
+
+    base_url = SERVICES["support-bot"]
+    url = f"{base_url}/{path}"
+
+    response = requests.request(
+        method=request.method,
+        url=url,
+        params=request.args,
+        data=request.get_data(),
+        headers={
+            key: value
+            for key, value in request.headers
+            if key.lower() not in ("host", "content-length")
+        },
+        allow_redirects=False,
+    )
+
+    return Response(
+        response.content,
+        status=response.status_code,
+        headers=[
+            (key, value)
+            for key, value in response.headers.items()
+            if key.lower() not in ("content-encoding", "content-length", "transfer-encoding", "connection")
+        ],
+    )
 
 if __name__ == "__main__":
     app.run(

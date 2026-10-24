@@ -16,4 +16,6 @@ SERVICES = {
     "image-compressor": os.getenv("IMAGE_COMPRESSOR_URL", "http://image-compressor:5013"),
     "video-to-gif": os.getenv("VIDEO_TO_GIF_URL", "http://video-to-gif:5014"),
     "video-to-reels": os.getenv("VIDEO_TO_REELS_URL", "http://video-to-reels:5015"),
+    "payment": os.getenv("PAYMENT_URL", "http://payment:5016"),
+    "support-bot": os.getenv("SUPPORT_BOT_URL", "http://support-bot:5017"),
 }

@@ -3,45 +3,83 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/static/style.css" />
-
+    <meta name="theme-color" content="#111827" />
     <title>Media Tools</title>
+    <link rel="stylesheet" href="/static/style.css" />
 
     <style>
       * {
         box-sizing: border-box;
       }
 
-      body {
+      html {
+        min-height: 100%;
+        width: 100%;
         margin: 0;
+        scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        width: 100%;
+        min-height: 100vh;
+        min-height: 100dvh;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
         font-family: Arial, sans-serif;
-        color: #202124;
-        background: #f5f7fb;
+        font-size: 16px;
+        line-height: 1.5;
+        color: #f8fafc;
+        background: linear-gradient(
+          120deg,
+          #281c51 0%,
+          #102f49 55%,
+          #0b1020 100%
+        );
+        overflow-x: hidden;
+      }
+
+      button,
+      input,
+      textarea {
+        font: inherit;
+      }
+
+      a {
+        -webkit-tap-highlight-color: transparent;
       }
 
       header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 18px 6%;
-        background: #fff;
-        border-bottom: 1px solid #e5e7eb;
         position: relative;
         z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        width: 100%;
+        min-height: 72px;
+        padding: 12px clamp(16px, 5vw, 72px);
+        background: #fff;
+        color: #202124;
+        border-bottom: 1px solid #e5e7eb;
       }
 
       .brand {
-        font-size: 23px;
+        min-width: 0;
+        font-size: clamp(19px, 2vw, 23px);
         font-weight: 700;
+        overflow-wrap: anywhere;
       }
 
       .account-menu {
         position: relative;
+        flex-shrink: 0;
       }
 
       .account-toggle {
-        width: 46px;
-        height: 46px;
+        width: 44px;
+        height: 44px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -69,13 +107,15 @@
         position: absolute;
         top: calc(100% + 12px);
         right: 0;
-        width: 270px;
+        z-index: 20;
+        width: min(270px, calc(100vw - 24px));
         padding: 16px;
+        display: none;
+        color: #202124;
         background: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 16px;
         box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
-        display: none;
         animation: dropdownIn 0.18s ease-out;
       }
 
@@ -84,20 +124,20 @@
       }
 
       .account-heading {
+        margin-bottom: 12px;
         font-size: 12px;
         color: #6b7280;
         text-transform: uppercase;
         letter-spacing: 1px;
-        margin-bottom: 12px;
       }
 
       .account-identity {
-        padding: 12px;
         margin-bottom: 12px;
-        background: #f5f3ff;
-        border-radius: 10px;
+        padding: 12px;
         overflow-wrap: anywhere;
         color: #4338ca;
+        background: #f5f3ff;
+        border-radius: 10px;
         font-size: 13px;
         font-weight: 600;
       }
@@ -122,8 +162,8 @@
 
       .account-link {
         margin-top: 9px;
-        background: #4f46e5;
         color: #fff;
+        background: #4f46e5;
       }
 
       .account-link.register {
@@ -133,8 +173,8 @@
       .account-logout {
         margin-top: 8px;
         border: none;
-        background: #fff1f2;
         color: #be123c;
+        background: #fff1f2;
       }
 
       .account-link:hover,
@@ -143,79 +183,158 @@
         transform: translateY(-1px);
       }
 
+      .account-button {
+        display: block;
+        width: 100%;
+        margin-top: 8px;
+        padding: 12px;
+        border-radius: 9px;
+        color: #fff;
+        background: #5145e5;
+        text-align: center;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .account-button:hover {
+        background: #4338ca;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .payment-blink {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 9px 18px;
+        border-radius: 25px;
+        color: #fff;
+        background: #e53935;
+        font-size: 14px;
+        font-weight: 700;
+        text-align: center;
+        text-decoration: none;
+        white-space: nowrap;
+        animation: paymentPulse 1.8s infinite;
+      }
+
+      @keyframes paymentPulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.25);
+        }
+        50% {
+          box-shadow: 0 0 0 5px rgba(229, 57, 53, 0);
+        }
+      }
+
       main {
-        max-width: 1150px;
-        margin: auto;
-        padding: 45px 22px;
+        flex: 1 0 auto;
+        width: 100%;
+        max-width: 1240px;
+        min-width: 0;
+        margin: 0 auto;
+        padding: clamp(22px, 4vw, 48px) clamp(14px, 3vw, 28px);
       }
 
       .hero {
-        text-align: center;
-        margin-bottom: 38px;
-        padding: 35px 20px;
-        border-radius: 18px;
-        background: linear-gradient(120deg, #4f46e5, #9333ea, #38bdf8);
+        width: 100%;
+        margin: 0 0 clamp(22px, 3vw, 36px);
+        padding: clamp(24px, 4vw, 42px) clamp(16px, 3vw, 28px);
+        border-radius: 16px;
         color: #fff;
+        background: linear-gradient(120deg, #4f46e5, #9333ea, #38bdf8);
+        text-align: center;
+        overflow-wrap: anywhere;
         box-shadow: 0 14px 35px rgba(79, 70, 229, 0.18);
       }
 
       .hero h1 {
-        font-size: 38px;
         margin: 0 0 12px;
+        font-size: clamp(25px, 4vw, 38px);
+        line-height: 1.2;
       }
 
       .hero p {
-        margin: 0;
+        max-width: 760px;
+        margin: 0 auto;
         color: #f1f5f9;
-        line-height: 1.6;
+        font-size: clamp(14px, 1.7vw, 16px);
+        line-height: 1.65;
       }
 
       .tools {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        align-items: stretch;
+        gap: clamp(12px, 1.8vw, 20px);
+        width: 100%;
       }
 
       .tool {
-        padding: 25px;
-        background: #fff;
-        border: 1px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        min-width: 0;
+        padding: clamp(15px, 2vw, 24px);
+        border: 1px solid rgba(226, 232, 240, 0.25);
         border-radius: 14px;
-        box-shadow: 0 5px 18px rgba(15, 23, 42, 0.04);
+        background: rgba(15, 23, 42, 0.58);
+        box-shadow: 0 5px 18px rgba(0, 0, 0, 0.08);
         transition:
           transform 0.22s ease,
           box-shadow 0.22s ease;
       }
 
       .tool:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 14px 28px rgba(15, 23, 42, 0.1);
+        transform: translateY(-3px);
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
       }
 
       .tool h2 {
-        font-size: 19px;
-        margin: 0 0 12px;
+        width: 100%;
+        margin: 0 0 10px;
+        color: #fff;
+        font-size: clamp(16px, 1.6vw, 19px);
+        line-height: 1.35;
+        overflow-wrap: anywhere;
       }
 
       .tool p {
-        color: #606773;
-        line-height: 1.5;
-        min-height: 45px;
+        width: 100%;
+        flex: 1;
+        margin: 0 0 16px;
+        color: #d1d5db;
+        font-size: 14px;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
       }
 
       .button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 11px 17px;
-        border-radius: 8px;
+        max-width: 100%;
+        min-height: 40px;
+        margin-top: auto;
+        padding: 10px 16px;
         border: none;
-        background: #4f46e5;
+        border-radius: 8px;
         color: #fff;
-        cursor: pointer;
+        background: #4f46e5;
         font-size: 14px;
         font-weight: 600;
+        line-height: 1.3;
+        text-align: center;
         text-decoration: none;
+        overflow-wrap: anywhere;
+        cursor: pointer;
         transition:
           transform 0.2s ease,
           filter 0.2s ease;
@@ -227,11 +346,16 @@
       }
 
       footer {
+        position: relative;
+        flex-shrink: 0;
+        width: 100%;
+        margin-top: auto;
+        padding: 20px 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        color: #c7d2fe;
+        background: #0b1020;
         text-align: center;
-        padding: 25px;
-        color: #6b7280;
-        background: #fff;
-        margin-top: 45px;
+        font-size: 13px;
       }
 
       @keyframes dropdownIn {
@@ -245,9 +369,168 @@
         }
       }
 
-      @media (max-width: 600px) {
+      /* Floating support button */
+      .support-icon {
+        position: fixed;
+        right: 22px;
+        bottom: 22px;
+        z-index: 9999;
+        width: 54px;
+        height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: 50%;
+        color: #fff;
+        background: linear-gradient(135deg, #4f46e5, #9333ea);
+        box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+        cursor: pointer;
+        transition: transform 0.2s ease;
+      }
+
+      .support-icon:hover {
+        transform: scale(1.08);
+      }
+
+      .support-icon svg {
+        width: 27px;
+        height: 27px;
+      }
+
+      /* Floating support chat */
+      .support-chat {
+        position: fixed;
+        right: 22px;
+        bottom: 90px;
+        z-index: 9998;
+        width: 390px;
+        height: min(560px, calc(100dvh - 120px));
+        max-width: calc(100vw - 28px);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 16px 50px rgba(15, 23, 42, 0.25);
+      }
+
+      .support-chat.open {
+        display: flex;
+      }
+
+      .support-chat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+        gap: 10px;
+        padding: 14px 16px;
+        color: #fff;
+        background: linear-gradient(135deg, #4f46e5, #9333ea);
+      }
+
+      .support-chat-title {
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .support-chat-subtitle {
+        margin-top: 4px;
+        color: #ede9fe;
+        font-size: 12px;
+      }
+
+      .support-chat-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+
+      .support-chat-minimize,
+      .support-chat-maximize,
+      .support-chat-close {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        border-radius: 6px;
+        color: #fff;
+        background: rgba(255, 255, 255, 0.18);
+        font-size: 21px;
+        cursor: pointer;
+      }
+
+      .support-chat-minimize:hover,
+      .support-chat-maximize:hover,
+      .support-chat-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .support-chat-frame {
+        display: block;
+        flex: 1;
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
+        border: none;
+        background: #fff;
+      }
+
+      .support-chat.minimized {
+        height: 62px;
+      }
+
+      .support-chat.minimized .support-chat-frame {
+        display: none;
+      }
+
+      .support-chat.maximized {
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        height: 100dvh;
+        max-width: none;
+        max-height: none;
+        border: none;
+        border-radius: 0;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+
+      .tools-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .tool-card {
+        min-width: 0;
+      }
+
+      @media (max-width: 1000px) {
+        .tools {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .tools-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 760px) {
         header {
-          padding: 14px 18px;
+          min-height: 62px;
+          padding: 10px 16px;
         }
 
         .brand {
@@ -255,15 +538,182 @@
         }
 
         main {
-          padding: 28px 16px;
+          padding: 22px 16px;
+        }
+
+        .tools {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 14px;
+        }
+
+        .tools-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .tool {
+          padding: 18px;
+        }
+
+        .tool h2 {
+          font-size: 17px;
+        }
+
+        .tool p {
+          font-size: 14px;
+        }
+
+        .payment-blink {
+          min-height: 36px;
+          padding: 8px 13px;
+          font-size: 13px;
+        }
+
+        footer {
+          padding: 18px 12px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        header {
+          gap: 8px;
+          padding: 10px 12px;
+        }
+
+        .brand {
+          font-size: 17px;
+        }
+
+        .header-actions {
+          gap: 8px;
+        }
+
+        .account-toggle {
+          width: 39px;
+          height: 39px;
+        }
+
+        .payment-blink {
+          min-height: 33px;
+          padding: 7px 10px;
+          font-size: 12px;
+        }
+
+        main {
+          padding: 18px 12px 24px;
+        }
+
+        .hero {
+          margin-bottom: 20px;
+          padding: 25px 15px;
+          border-radius: 12px;
         }
 
         .hero h1 {
-          font-size: 29px;
+          font-size: clamp(23px, 6vw, 29px);
         }
 
-        .account-dropdown {
-          width: min(270px, calc(100vw - 32px));
+        .hero p {
+          font-size: 14px;
+        }
+
+        .tools {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        .tool {
+          padding: 13px 11px;
+          border-radius: 10px;
+        }
+
+        .tool h2 {
+          margin-bottom: 8px;
+          font-size: 15px;
+        }
+
+        .tool p {
+          margin-bottom: 12px;
+          font-size: 12px;
+          line-height: 1.5;
+        }
+
+        .button {
+          min-height: 36px;
+          padding: 8px 10px;
+          font-size: 12px;
+        }
+
+        footer {
+          padding: 16px 10px;
+          font-size: 12px;
+        }
+
+        .support-chat {
+          right: 8px;
+          bottom: 72px;
+          width: calc(100vw - 16px);
+          height: calc(100dvh - 88px);
+          max-width: none;
+          border-radius: 12px;
+        }
+
+        .support-icon {
+          right: 14px;
+          bottom: 14px;
+          width: 48px;
+          height: 48px;
+        }
+
+        .support-chat.maximized {
+          inset: 0;
+          width: 100%;
+          height: 100dvh;
+          border-radius: 0;
+        }
+      }
+
+      @media (max-width: 340px) {
+        .brand {
+          font-size: 15px;
+        }
+
+        .tools {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .tool {
+          padding: 17px;
+        }
+
+        .tool h2 {
+          font-size: 17px;
+        }
+
+        .tool p {
+          font-size: 14px;
+        }
+
+        .button {
+          font-size: 13px;
+        }
+
+        .support-chat-subtitle {
+          font-size: 11px;
+        }
+
+        .support-chat-header {
+          padding: 12px 10px;
+        }
+
+        .support-chat-header-actions {
+          gap: 4px;
+        }
+
+        .support-chat-minimize,
+        .support-chat-maximize,
+        .support-chat-close {
+          width: 28px;
+          height: 30px;
         }
       }
 
@@ -273,24 +723,8 @@
         *::after {
           animation: none !important;
           transition: none !important;
+          scroll-behavior: auto !important;
         }
-      }
-      .account-button {
-        display: block;
-        width: 100%;
-        padding: 12px;
-        margin-top: 8px;
-        border-radius: 9px;
-        background: #5145e5;
-        color: #fff;
-        text-align: center;
-        text-decoration: none;
-        font-weight: 700;
-        font-size: 14px;
-      }
-
-      .account-button:hover {
-        background: #4338ca;
       }
     </style>
   </head>
@@ -299,36 +733,40 @@
     <header>
       <div class="brand">Media Tools</div>
 
-      <div class="account-menu">
-        <button
-          class="account-toggle"
-          id="account-toggle"
-          type="button"
-          aria-label="Open account menu"
-          aria-expanded="false"
-          aria-controls="account-dropdown"
-        >
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle
-              cx="12"
-              cy="8"
-              r="4"
-              stroke="currentColor"
-              stroke-width="2"
-            />
-            <path
-              d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-          </svg>
-        </button>
+      <div class="header-actions">
+        <a href="/payment/" class="payment-blink">Contribute</a>
 
-        <div class="account-dropdown" id="account-dropdown">
-          <div class="account-heading">Your account</div>
-          <div id="account-content"></div>
-          <a href="/services/" class="account-button">Services</a>
+        <div class="account-menu">
+          <button
+            class="account-toggle"
+            id="account-toggle"
+            type="button"
+            aria-label="Open account menu"
+            aria-expanded="false"
+            aria-controls="account-dropdown"
+          >
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle
+                cx="12"
+                cy="8"
+                r="4"
+                stroke="currentColor"
+                stroke-width="2"
+              />
+              <path
+                d="M4 21c0-4.2 3.6-7 8-7s8 2.8 8 7"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+
+          <div class="account-dropdown" id="account-dropdown">
+            <div class="account-heading">Your account</div>
+            <div id="account-content"></div>
+            <a href="/services/" class="account-button">Services</a>
+          </div>
         </div>
       </div>
     </header>
@@ -381,6 +819,7 @@
           <p>Convert multiple images into one downloadable PDF document.</p>
           <a class="button" href="/image-to-pdf/">Open Tool</a>
         </article>
+
         <article class="tool">
           <h2>PDF to JPG</h2>
           <p>
@@ -398,11 +837,13 @@
           </p>
           <a class="button" href="/video-subtitle/">Open Tool</a>
         </article>
+
         <article class="tool">
           <h2>Word To PDF</h2>
           <p>Convert Word documents into PDF files quickly and easily.</p>
           <a class="button" href="/word-to-pdf/">Open Tool</a>
         </article>
+
         <article class="tool">
           <h2>PDF To Word</h2>
           <p>
@@ -410,15 +851,16 @@
           </p>
           <a class="button" href="/pdf-to-word/">Open Tool</a>
         </article>
+
         <article class="tool">
           <h2>Image Compressor</h2>
           <p>
             Compress images and reduce file sizes quickly while maintaining
             image quality.
           </p>
-
           <a class="button" href="/image-compressor/">Open Tool</a>
         </article>
+
         <article class="tool">
           <h2>Video to GIF</h2>
           <p>
@@ -440,7 +882,7 @@
       </section>
     </main>
 
-    <footer>Media Tools</footer>
+    <footer>© 2026 Media Tools. All rights reserved.</footer>
 
     <script>
       const accountToggle = document.getElementById("account-toggle");
@@ -504,6 +946,158 @@
           accountDropdown.classList.remove("open");
           accountToggle.setAttribute("aria-expanded", "false");
           accountToggle.focus();
+        }
+      });
+    </script>
+
+    <section
+      class="support-chat"
+      id="support-chat"
+      role="dialog"
+      aria-label="Technical Support Chat"
+      aria-hidden="true"
+    >
+      <div class="support-chat-header">
+        <div>
+          <div class="support-chat-title">Alina</div>
+          <div class="support-chat-subtitle">Media Tools Support Assistant</div>
+        </div>
+
+        <div class="support-chat-header-actions">
+          <button
+            class="support-chat-minimize"
+            id="support-chat-minimize"
+            type="button"
+            aria-label="Minimize chat"
+            title="Minimize"
+          >
+            &minus;
+          </button>
+
+          <button
+            class="support-chat-maximize"
+            id="support-chat-maximize"
+            type="button"
+            aria-label="Maximize chat"
+            title="Maximize"
+          >
+            &#x26F6;
+          </button>
+
+          <button
+            class="support-chat-close"
+            id="support-chat-close"
+            type="button"
+            aria-label="Return to gateway home"
+            title="Home"
+          >
+            &times;
+          </button>
+        </div>
+      </div>
+
+      <iframe
+        class="support-chat-frame"
+        id="support-chat-frame"
+        title="Alina Support Chat"
+        data-src="/support-bot/"
+        loading="eager"
+      ></iframe>
+    </section>
+
+    <button
+      class="support-icon"
+      id="support-icon"
+      type="button"
+      title="Chat with Alina"
+      aria-label="Open Alina Technical Support"
+      aria-expanded="false"
+      aria-controls="support-chat"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path
+          d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"
+        />
+      </svg>
+    </button>
+
+    <script>
+      const supportIcon = document.getElementById("support-icon");
+      const supportChat = document.getElementById("support-chat");
+      const supportChatClose = document.getElementById("support-chat-close");
+      const supportChatMinimize = document.getElementById(
+        "support-chat-minimize",
+      );
+      const supportChatMaximize = document.getElementById(
+        "support-chat-maximize",
+      );
+      const supportChatFrame = document.getElementById("support-chat-frame");
+
+      let supportFrameLoaded = false;
+
+      function openSupportChat() {
+        if (!supportFrameLoaded) {
+          supportChatFrame.src = supportChatFrame.dataset.src;
+          supportFrameLoaded = true;
+        }
+
+        supportChat.classList.add("open");
+        supportChat.classList.remove("minimized");
+        supportChat.setAttribute("aria-hidden", "false");
+        supportIcon.setAttribute("aria-expanded", "true");
+      }
+
+      function closeSupportChat() {
+        window.location.href = "/";
+      }
+
+      supportIcon.addEventListener("click", () => {
+        if (!supportChat.classList.contains("open")) {
+          openSupportChat();
+        } else if (supportChat.classList.contains("minimized")) {
+          supportChat.classList.remove("minimized");
+        } else {
+          supportChat.classList.add("minimized");
+          supportChat.classList.remove("maximized");
+        }
+      });
+
+      supportChatMinimize.addEventListener("click", () => {
+        supportChat.classList.add("minimized");
+        supportChat.classList.remove("maximized");
+        supportChatMaximize.title = "Maximize";
+        supportChatMaximize.setAttribute("aria-label", "Maximize chat");
+        supportChatMaximize.innerHTML = "&#x26F6;";
+      });
+
+      supportChatMaximize.addEventListener("click", () => {
+        supportChat.classList.remove("minimized");
+        supportChat.classList.toggle("maximized");
+
+        const isMaximized = supportChat.classList.contains("maximized");
+
+        supportChatMaximize.title = isMaximized ? "Restore" : "Maximize";
+        supportChatMaximize.setAttribute(
+          "aria-label",
+          isMaximized ? "Restore chat size" : "Maximize chat",
+        );
+        supportChatMaximize.innerHTML = isMaximized ? "&#x2750;" : "&#x26F6;";
+      });
+
+      supportChatClose.addEventListener("click", closeSupportChat);
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && supportChat.classList.contains("open")) {
+          closeSupportChat();
         }
       });
     </script>
