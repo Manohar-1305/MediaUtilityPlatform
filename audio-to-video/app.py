@@ -97,8 +97,16 @@ def update_job(job_id, **values):
             jobs[job_id].update(values)
 
 
-def process_job(job_id, work_dir, audio_path, image_path, output_path,
-                requested_duration, audio_duration):
+def process_job(
+    job_id,
+    work_dir,
+    audio_path,
+    image_path,
+    output_path,
+    requested_duration,
+    audio_duration,
+    redis_key,
+):
     process = None
     started = time.monotonic()
 
@@ -245,6 +253,13 @@ def process_job(job_id, work_dir, audio_path, image_path, output_path,
         if not output_path.is_file() or output_path.stat().st_size == 0:
             raise RuntimeError("The output video was not created.")
 
+        try:
+            output_bytes = output_path.read_bytes()
+            if redis_key:
+                cache_set(redis_key, output_bytes)
+        except (OSError, Exception):
+            pass
+
         update_job(
             job_id,
             state="completed",
@@ -301,9 +316,7 @@ def convert():
 
     work_dir = tempfile.mkdtemp(prefix="audio-to-video-")
     work_path = Path(work_dir)
-    audio_path = work_path / (
-        "audio" + audio_extension
-    )
+    audio_path = work_path / ("audio" + audio_extension)
     image_path = None
     output_path = work_path / "audio_video.mp4"
 
@@ -332,6 +345,51 @@ def convert():
 
         job_id = uuid.uuid4().hex
 
+        try:
+            audio_bytes = audio_path.read_bytes()
+            image_bytes = image_path.read_bytes() if image_path else b""
+
+            redis_key = cache_key(
+                "audio-to-video",
+                audio_bytes + b"\0" + image_bytes,
+                {
+                    "duration": duration_choice,
+                    "audio_extension": audio_extension,
+                    "image_extension": image_path.suffix.lower() if image_path else None,
+                },
+            )
+            cached_output = cache_get(redis_key)
+        except Exception:
+            redis_key = None
+            cached_output = None
+
+        if cached_output is not None:
+            try:
+                output_path.write_bytes(cached_output)
+
+                with jobs_lock:
+                    jobs[job_id] = {
+                        "state": "completed",
+                        "progress": 100,
+                        "message": "Video is ready to download.",
+                        "elapsed_seconds": 0,
+                        "estimated_seconds": 0,
+                        "error": None,
+                        "download_url": f"/download/{job_id}",
+                        "work_dir": work_dir,
+                    }
+
+                return jsonify({
+                    "job_id": job_id,
+                    "state": "completed",
+                    "status_url": f"/status/{job_id}",
+                    "download_url": f"/download/{job_id}",
+                    "cache": "HIT",
+                }), 202
+            except OSError:
+                shutil.rmtree(work_dir, ignore_errors=True)
+                return jsonify({"error": "Unable to prepare cached video."}), 500
+
         with jobs_lock:
             jobs[job_id] = {
                 "state": "queued",
@@ -356,6 +414,7 @@ def convert():
                 output_path,
                 requested_duration,
                 audio_duration,
+                redis_key,
             ),
             daemon=True,
         ).start()
@@ -364,6 +423,7 @@ def convert():
             "job_id": job_id,
             "state": "queued",
             "status_url": f"/status/{job_id}",
+            "cache": "MISS",
         }), 202
 
     except Exception as exc:
