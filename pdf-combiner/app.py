@@ -1,15 +1,26 @@
 
 import io
+import logging
 import os
+
 from flask import Flask, jsonify, request, send_file, render_template
 from pypdf import PdfReader, PdfWriter
 from werkzeug.utils import secure_filename
+
+from redis_cache import cache_ping
+from redis_cache_hooks import (
+    build_merge_cache_key,
+    get_cached_pdf,
+    store_cached_pdf,
+)
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
 
 MAX_FILES = 30
 MAX_PAGES = 1000
+
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 
 
 @app.get("/")
@@ -21,13 +32,16 @@ def index():
 def health():
     return jsonify({
         "status": "healthy",
-        "service": "pdf-combiner"
+        "service": "pdf-combiner",
+        "redis": "available" if cache_ping() else "unavailable",
     })
 
 
 @app.errorhandler(413)
 def file_too_large(_error):
-    return jsonify({"error": "Total upload size cannot exceed 100 MB."}), 413
+    return jsonify({
+        "error": "Total upload size cannot exceed 100 MB."
+    }), 413
 
 
 @app.post("/merge")
@@ -35,33 +49,62 @@ def merge_pdfs():
     files = request.files.getlist("files")
 
     if len(files) < 2:
-        return jsonify({"error": "Upload at least two PDF files."}), 400
+        return jsonify({
+            "error": "Upload at least two PDF files."
+        }), 400
 
     if len(files) > MAX_FILES:
         return jsonify({
             "error": f"You can combine a maximum of {MAX_FILES} files."
         }), 400
 
+    uploaded_data = []
+
+    for uploaded in files:
+        if not uploaded.filename:
+            return jsonify({
+                "error": "A selected file has no filename."
+            }), 400
+
+        filename = secure_filename(uploaded.filename)
+
+        if not filename.lower().endswith(".pdf"):
+            return jsonify({
+                "error": f"{filename}: only PDF files are supported."
+            }), 400
+
+        data = uploaded.read()
+
+        if not data:
+            return jsonify({
+                "error": f"{filename}: the file is empty."
+            }), 400
+
+        uploaded_data.append((filename, data))
+
+    # Cache key includes ordered filenames and file contents.
+    key = build_merge_cache_key(uploaded_data)
+
+    # Redis failures are handled by the cache helpers.
+    cached_pdf = get_cached_pdf(key)
+
+    if cached_pdf is not None:
+        app.logger.info("PDF merge cache hit")
+        return send_file(
+            io.BytesIO(cached_pdf),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name="combined.pdf",
+            max_age=0,
+        )
+
+    app.logger.info("PDF merge cache miss")
+
     writer = PdfWriter()
     total_pages = 0
 
     try:
-        for uploaded in files:
-            if not uploaded.filename:
-                return jsonify({"error": "A selected file has no filename."}), 400
-
-            filename = secure_filename(uploaded.filename)
-
-            if not filename.lower().endswith(".pdf"):
-                return jsonify({
-                    "error": f"{filename}: only PDF files are supported."
-                }), 400
-
-            data = uploaded.read()
-
-            if not data:
-                return jsonify({"error": f"{filename}: the file is empty."}), 400
-
+        for filename, data in uploaded_data:
             try:
                 reader = PdfReader(io.BytesIO(data), strict=True)
 
@@ -81,7 +124,10 @@ def merge_pdfs():
 
                 if total_pages > MAX_PAGES:
                     return jsonify({
-                        "error": f"Combined PDFs cannot exceed {MAX_PAGES} pages."
+                        "error": (
+                            f"Combined PDFs cannot exceed "
+                            f"{MAX_PAGES} pages."
+                        )
                     }), 400
 
                 for page in reader.pages:
@@ -94,23 +140,33 @@ def merge_pdfs():
 
         output = io.BytesIO()
         writer.write(output)
-        output.seek(0)
+        pdf_bytes = output.getvalue()
+
+        # The cache helper skips results larger than the configured limit.
+        store_cached_pdf(key, pdf_bytes)
 
         return send_file(
-            output,
+            io.BytesIO(pdf_bytes),
             mimetype="application/pdf",
             as_attachment=True,
             download_name="combined.pdf",
-            max_age=0
+            max_age=0,
         )
 
     except Exception:
         app.logger.exception("PDF combination failed")
-        return jsonify({"error": "Unable to combine the selected PDFs."}), 500
+        return jsonify({
+            "error": "Unable to combine the selected PDFs."
+        }), 500
 
     finally:
         writer.close()
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5005")))
+    app.run(
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", "5005")),
+        debug=False,
+        threaded=True,
+    )
