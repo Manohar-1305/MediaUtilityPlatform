@@ -27,4 +27,4 @@ USER 10001
 
 EXPOSE 5011
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5011", "--workers", "1", "--timeout", "150", "app:app"]root@ubuntu:~/MediaUtilityPlatform/word-to-pdf
+CMD ["gunicorn", "--bind", "0.0.0.0:5011", "--workers", "1", "--timeout", "150", "app:app"]
