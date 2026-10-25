@@ -1,4 +1,4 @@
 Flask
 requests
-python-dotenv
 redis>=5,<7
+python-dotenv
