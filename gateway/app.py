@@ -23,6 +23,9 @@ app.config["MAX_FORM_MEMORY_SIZE"] = 16 * 1024 * 1024
 app.config["MAX_FORM_PARTS"] = 10000
 
 from config import SERVICES
+from redis_cache_hooks import init_redis_cache
+
+init_redis_cache(app, "gateway")
 
 @app.before_request
 def log_request():
