@@ -1,4 +1,5 @@
 Flask
 pypdf
 gunicorn
+
 redis>=5.2,<7.0
