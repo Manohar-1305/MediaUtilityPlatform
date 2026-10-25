@@ -201,7 +201,7 @@ def update_job(job_id, **values):
             jobs[job_id].update(values)
 
 
-def process_job(job_id, source, destination, work_dir, settings, duration):
+def process_job(job_id, source, destination, work_dir, settings, duration, redis_key):
     started = time.monotonic()
     process = None
 
@@ -298,6 +298,11 @@ def process_job(job_id, source, destination, work_dir, settings, duration):
         if not destination.is_file() or destination.stat().st_size == 0:
             raise RuntimeError("FFmpeg did not produce a valid video.")
 
+        try:
+            cache_set(redis_key, destination.read_bytes())
+        except Exception:
+            app.logger.exception("Unable to cache completed video in Redis")
+
         update_job(
             job_id,
             state="completed",
@@ -375,6 +380,33 @@ def cut():
                 "error": "Select a valid section that is no longer than 1 hour."
             }), 400
 
+        redis_key = cache_key(
+            "video-cutter",
+            source.read_bytes(),
+            settings
+        )
+        cached_output = cache_get(redis_key)
+
+        if cached_output is not None:
+            destination.write_bytes(cached_output)
+            with jobs_lock:
+                jobs[job_id] = {
+                    "state": "completed",
+                    "progress": 100,
+                    "message": "Video ready to download (Redis cache hit).",
+                    "elapsed_seconds": 0,
+                    "estimated_seconds": 0,
+                    "error": None,
+                    "download_url": f"/download/{job_id}",
+                    "work_dir": work_dir
+                }
+            return jsonify({
+                "job_id": job_id,
+                "state": "completed",
+                "status_url": f"/status/{job_id}",
+                "cache": "HIT"
+            }), 202
+
         with jobs_lock:
             jobs[job_id] = {
                 "state": "queued",
@@ -389,7 +421,7 @@ def cut():
 
         threading.Thread(
             target=process_job,
-            args=(job_id, source, destination, work_dir, settings, duration),
+            args=(job_id, source, destination, work_dir, settings, duration, redis_key),
             daemon=True
         ).start()
 
