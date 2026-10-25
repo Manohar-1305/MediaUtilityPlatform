@@ -2,3 +2,5 @@ Flask
 python-docx
 reportlab
 redis>=5,<7
+
+gunicorn
