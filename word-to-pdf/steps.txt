@@ -4,3 +4,6 @@ curl.exe http://127.0.0.1:5011/health
 
 # Build & Run container
 docker build -t word-to-pdf:latest . && docker rm -f word-to-pdf 2>/dev/null; docker run -d --name word-to-pdf --restart unless-stopped --env-file ~/MediaUtilityPlatform/word-to-pdf/.env --network media-tools-network -p 5011:5011 word-to-pdf:latest
+
+# Import Redis cache
+cd ~/MediaUtilityPlatform/word-to-pdf && sed -i '1i from redis_cache_hooks import init_redis_cache\nfrom redis_cache import cache_key, cache_get, cache_set' app.py && sed -i '/app = Flask(__name__)/a init_redis_cache(app, "word-to-pdf")' app.py && docker build -t word-to-pdf:latest . && docker rm -f word-to-pdf && docker run -d --name word-to-pdf --restart unless-stopped --env-file .env --network media-tools-network -p 5011:5011 word-to-pdf:latest
