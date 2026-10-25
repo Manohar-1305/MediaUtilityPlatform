@@ -1,4 +1,3 @@
 Flask
-imageio-ffmpegredis>=5,<7
-
+imageio-ffmpeg
 redis>=5,<7
