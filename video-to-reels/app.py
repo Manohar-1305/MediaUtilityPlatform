@@ -1,5 +1,3 @@
-from redis_cache import cache_key, cache_get, cache_set
-
 import io
 import os
 import subprocess
@@ -9,6 +7,8 @@ from pathlib import Path
 
 import imageio_ffmpeg
 from flask import Flask, jsonify, render_template, request, send_file
+
+from redis_cache import cache_key, cache_get, cache_set, redis_client
 from redis_cache_hooks import init_redis_cache
 
 app = Flask(__name__)
@@ -31,6 +31,7 @@ PLATFORMS = {
     "youtube": "youtube-shorts",
     "instagram": "instagram-reels",
 }
+
 
 def get_output_dimensions(resolution, ratio):
     base = int(resolution)
@@ -86,7 +87,6 @@ def convert():
     try:
         start_time = float(request.form.get("start_time", "0"))
         duration = float(request.form.get("duration", "30"))
-
         crop_x = float(request.form.get("crop_x", "0"))
         crop_y = float(request.form.get("crop_y", "0"))
         crop_w = float(request.form.get("crop_w", "1"))
@@ -111,26 +111,60 @@ def convert():
         return jsonify({"error": "Invalid crop selection."}), 400
 
     width, height = get_output_dimensions(resolution, ratio)
-    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+
+    settings = {
+        "platform": platform,
+        "resolution": resolution,
+        "aspect_ratio": ratio,
+        "start_time": start_time,
+        "duration": duration,
+        "crop_x": crop_x,
+        "crop_y": crop_y,
+        "crop_w": crop_w,
+        "crop_h": crop_h,
+        "width": width,
+        "height": height,
+        "format": "mp4-v1",
+    }
+
+    video_data = uploaded_file.read()
+    key = cache_key("video-to-reels", video_data, settings)
     download_name = f"{PLATFORMS[platform]}-{uuid.uuid4().hex[:8]}.mp4"
 
-    # Crop coordinates are normalized against the original video frame.
-    crop_filter = (
-        f"crop="
-        f"trunc(iw*{crop_w:.8f}/2)*2:"
-        f"trunc(ih*{crop_h:.8f}/2)*2:"
-        f"trunc(iw*{crop_x:.8f}/2)*2:"
-        f"trunc(ih*{crop_y:.8f}/2)*2,"
-        f"scale={width}:{height}:flags=lanczos,"
-        "setsar=1,fps=30"
-    )
-
     try:
+        cached_data = cache_get(key)
+
+        if cached_data is not None:
+            app.logger.info("Redis cache HIT: %s", key)
+            return send_file(
+                io.BytesIO(cached_data),
+                mimetype="video/mp4",
+                as_attachment=True,
+                download_name=download_name,
+                max_age=0,
+                etag=False,
+            ), 200, {"X-Redis-Cache": "HIT"}
+
+        app.logger.info("Redis cache MISS: %s", key)
+
+        ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+
+        crop_filter = (
+            f"crop="
+            f"trunc(iw*{crop_w:.8f}/2)*2:"
+            f"trunc(ih*{crop_h:.8f}/2)*2:"
+            f"trunc(iw*{crop_x:.8f}/2)*2:"
+            f"trunc(ih*{crop_y:.8f}/2)*2,"
+            f"scale={width}:{height}:flags=lanczos,"
+            "setsar=1,fps=30"
+        )
+
         with tempfile.TemporaryDirectory(prefix="video_to_reels_") as temp_dir:
             input_path = os.path.join(temp_dir, f"input{extension}")
             output_path = os.path.join(temp_dir, "output.mp4")
 
-            uploaded_file.save(input_path)
+            with open(input_path, "wb") as input_file:
+                input_file.write(video_data)
 
             command = [
                 ffmpeg,
@@ -170,17 +204,26 @@ def convert():
                 }), 422
 
             with open(output_path, "rb") as output_file:
-                video_data = io.BytesIO(output_file.read())
+                output_data = output_file.read()
 
-            video_data.seek(0)
+        if cache_set(key, output_data):
+            app.logger.info(
+                "Redis cache STORE: %s (%d bytes)", key, len(output_data)
+            )
+        else:
+            app.logger.warning(
+                "Redis cache STORE skipped or failed: %s (%d bytes)",
+                key, len(output_data)
+            )
 
         return send_file(
-            video_data,
+            io.BytesIO(output_data),
             mimetype="video/mp4",
             as_attachment=True,
             download_name=download_name,
             max_age=0,
-        )
+            etag=False,
+        ), 200, {"X-Redis-Cache": "MISS"}
 
     except subprocess.TimeoutExpired:
         return jsonify({
