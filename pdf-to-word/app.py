@@ -1,6 +1,3 @@
-from redis_cache_hooks import init_redis_cache
-from redis_cache import cache_key, cache_get, cache_set
-
 import io
 import logging
 from pathlib import Path
@@ -9,12 +6,21 @@ from flask import Flask, jsonify, render_template, request, send_file
 from pypdf import PdfReader
 from docx import Document
 
+from redis_cache import cache_key, cache_get, cache_set
+from redis_cache_hooks import init_redis_cache
+
 app = Flask(__name__)
 init_redis_cache(app, "pdf-to-word")
 app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+DOCX_MIMETYPE = (
+    "application/vnd.openxmlformats-officedocument."
+    "wordprocessingml.document"
+)
+
 
 @app.route("/", methods=["GET"])
 def index():
@@ -23,10 +29,7 @@ def index():
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({
-        "status": "healthy",
-        "service": "pdf-to-word"
-    }), 200
+    return jsonify({"status": "healthy", "service": "pdf-to-word"}), 200
 
 
 @app.route("/convert", methods=["POST"])
@@ -47,6 +50,22 @@ def convert():
         if not pdf_data:
             return jsonify({"error": "The selected PDF is empty."}), 400
 
+        key = cache_key("pdf-to-word", pdf_data)
+
+        try:
+            cached_docx = cache_get(key)
+            if cached_docx:
+                logger.info("Redis cache HIT: filename=%s", filename)
+                return send_file(
+                    io.BytesIO(cached_docx),
+                    mimetype=DOCX_MIMETYPE,
+                    as_attachment=True,
+                    download_name=f"{Path(filename).stem}.docx",
+                )
+            logger.info("Redis cache MISS: filename=%s", filename)
+        except Exception:
+            logger.exception("Redis cache read failed")
+
         reader = PdfReader(io.BytesIO(pdf_data))
 
         if reader.is_encrypted:
@@ -56,7 +75,6 @@ def convert():
 
         document = Document()
         document.add_heading(Path(filename).stem, level=1)
-
         extracted_pages = 0
 
         for page_number, page in enumerate(reader.pages, start=1):
@@ -64,7 +82,6 @@ def convert():
 
             if text and text.strip():
                 extracted_pages += 1
-
                 for paragraph_text in text.splitlines():
                     if paragraph_text.strip():
                         document.add_paragraph(paragraph_text)
@@ -82,7 +99,15 @@ def convert():
 
         output = io.BytesIO()
         document.save(output)
-        output.seek(0)
+        docx_data = output.getvalue()
+
+        if cache_set(key, docx_data):
+            logger.info("Redis cache STORE: filename=%s", filename)
+        else:
+            logger.warning(
+                "Redis cache STORE skipped or failed: filename=%s",
+                filename,
+            )
 
         logger.info(
             "Converted PDF to DOCX: filename=%s pages=%s",
@@ -91,11 +116,8 @@ def convert():
         )
 
         return send_file(
-            output,
-            mimetype=(
-                "application/vnd.openxmlformats-officedocument."
-                "wordprocessingml.document"
-            ),
+            io.BytesIO(docx_data),
+            mimetype=DOCX_MIMETYPE,
             as_attachment=True,
             download_name=f"{Path(filename).stem}.docx",
         )
@@ -103,7 +125,10 @@ def convert():
     except Exception:
         logger.exception("PDF-to-Word conversion failed")
         return jsonify({
-            "error": "Unable to convert this PDF. Check that it is valid and readable."
+            "error": (
+                "Unable to convert this PDF. "
+                "Check that it is valid and readable."
+            )
         }), 422
 
 
