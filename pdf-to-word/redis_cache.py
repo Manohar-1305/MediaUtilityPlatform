@@ -1,46 +1,50 @@
-import hashlib
-import json
-import os
+from flask import request, Response
+from redis_cache import cache_key, cache_get, cache_set
 
-import redis
-
-redis_client = redis.Redis(
-    host=os.getenv("REDIS_HOST", "redis"),
-    port=int(os.getenv("REDIS_PORT", "6379")),
-    db=int(os.getenv("REDIS_DB", "0")),
-    password=os.getenv("REDIS_PASSWORD") or None,
-    decode_responses=False,
-    socket_connect_timeout=3,
-    socket_timeout=5,
-    health_check_interval=30,
-)
-
-CACHE_TTL = int(os.getenv("REDIS_CACHE_TTL", "3600"))
-CACHE_MAX_BYTES = int(os.getenv("REDIS_CACHE_MAX_BYTES", "5242880"))
+MAX_CACHE_BYTES = 5 * 1024 * 1024
 
 
-def cache_key(service, file_bytes, settings=None):
-    digest = hashlib.sha256()
-    digest.update(service.encode())
-    digest.update(b"\0")
-    digest.update(file_bytes)
-    digest.update(b"\0")
-    digest.update(json.dumps(settings or {}, sort_keys=True).encode())
-    return "media-tools:conversion:" + digest.hexdigest()
+def init_redis_cache(app, service_name):
+    @app.before_request
+    def _redis_cache_before_request():
+        if request.method != "POST":
+            return None
+        if not request.content_type or not request.content_type.startswith("multipart/form-data"):
+            return None
 
+        try:
+            body = request.get_data(cache=True)
+            settings = {
+                "path": request.path,
+                "query": request.query_string.decode("latin1"),
+                "content_type": request.content_type,
+            }
+            key = cache_key(service_name, body, settings)
+            cached = cache_get(key)
 
-def cache_get(key):
-    try:
-        return redis_client.get(key)
-    except redis.RedisError:
+            if cached is not None:
+                return Response(
+                    cached,
+                    status=200,
+                    content_type="application/octet-stream",
+                    headers={"X-Redis-Cache": "HIT"},
+                )
+
+            request.environ["redis_cache_key"] = key
+        except Exception:
+            pass
+
         return None
 
-
-def cache_set(key, output_bytes):
-    if len(output_bytes) > CACHE_MAX_BYTES:
-        return False
-    try:
-        redis_client.setex(key, CACHE_TTL, output_bytes)
-        return True
-    except redis.RedisError:
-        return False
+    @app.after_request
+    def _redis_cache_after_request(response):
+        key = request.environ.pop("redis_cache_key", None)
+        if key and request.method == "POST" and response.status_code == 200:
+            try:
+                data = response.get_data()
+                if data and len(data) <= MAX_CACHE_BYTES:
+                    cache_set(key, data)
+                    response.headers["X-Redis-Cache"] = "MISS"
+            except Exception:
+                pass
+        return response
