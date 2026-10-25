@@ -13,5 +13,8 @@ EXPOSE 5005
 
 COPY templates/ ./templates/
 
+COPY redis_cache.py redis_cache_hooks.py ./
+
 CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT} --workers 2 --timeout 120 app:app"]
+
 
