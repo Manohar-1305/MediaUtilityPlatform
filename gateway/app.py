@@ -667,7 +667,10 @@ def pdf_combiner_legacy_proxy(path):
         return jsonify({
             "error": "PDF Combiner service is unavailable."
         }), 502
-        
+
+
+
+
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
