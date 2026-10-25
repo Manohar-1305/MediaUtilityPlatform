@@ -26,7 +26,7 @@ def cache_key(service, file_bytes, settings=None):
     digest.update(file_bytes)
     digest.update(b"\0")
     digest.update(json.dumps(settings or {}, sort_keys=True).encode())
-    return "media-tools:conversion:" + digest.hexdigest()
+    return "media-tools:word-to-pdf:conversion:" + digest.hexdigest() if service == "word-to-pdf" else "media-tools:conversion:" + digest.hexdigest()
 
 
 def cache_get(key):
