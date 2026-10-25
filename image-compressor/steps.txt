@@ -13,3 +13,7 @@ docker ps
 docker logs --tail 50 image-compressor
 
 curl http://localhost:5013/health
+
+docker exec media-tools-gateway python -c "import requests; r=requests.get('http://image-compressor:5013/',timeout=5); print(r.status_code,r.text[:300])"
+
+docker exec media-tools-gateway printenv IMAGE_COMPRESSOR_URL
