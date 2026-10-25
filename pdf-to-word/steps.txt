@@ -1,2 +1,5 @@
 # Build & run the container
-cd ~/MediaUtilityPlatform/pdf-to-word && docker build -t pdf-to-word:latest . && docker run -d --name pdf-to-word --restart unless-stopped --env-file .env --network media-tools-network -p 5012:5012 pdf-to-word:latest
+docker build -t pdf-to-word:latest . && docker run -d --name pdf-to-word --restart unless-stopped --env-file .env --network media-tools-network -p 5012:5012 pdf-to-word:latest
+
+# Redis caching
+docker exec pdf-to-word python -c 'import redis_cache_hooks,redis,os; r=redis.Redis(host=os.getenv("REDIS_HOST"),port=int(os.getenv("REDIS_PORT")),db=int(os.getenv("REDIS_DB")),password=os.getenv("REDIS_PASSWORD")); print("Redis cache hooks imported successfully"); print("Redis:",r.ping()); print("Keys:",r.keys("*"))'
