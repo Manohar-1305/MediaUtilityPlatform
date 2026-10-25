@@ -1,0 +1,2 @@
+# docker build & run
+docker build -t pdf-converter:latest . && docker rm -f pdf-converter 2>/dev/null && docker run -d --name pdf-converter --restart unless-stopped --env-file ~/MediaUtilityPlatform/gateway/.env --network media-tools-network -p 5004:5004 pdf-converter:latest
