@@ -9,7 +9,7 @@ docker exec redis redis-cli -a 'Redis123!' PING
 
 =======================================================================================================
 
-example and keep it brief
+why redis is used in this app?
 Think of Redis as a shortcut memory for your application.
 For example, you upload a video and convert it into a GIF using your Video-to-GIF service. The first time, the application takes time to convert it. Redis saves the finished GIF.
 Next time, if you upload the same video with the same settings, the application can fetch the GIF from Redis instead of converting it again. You get the result much faster.
