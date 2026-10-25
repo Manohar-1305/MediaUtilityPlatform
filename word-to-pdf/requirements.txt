@@ -1,5 +1,4 @@
 Flask
 python-docx
-reportlabredis>=5,<7
-
+reportlab
 redis>=5,<7
