@@ -7,6 +7,7 @@ docker build -t image-compressor:latest . && docker rm -f image-compressor 2>/de
 
 # Enable Redis
 docker exec image-compressor python -c 'import redis_cache_hooks; print("Redis cache hooks imported successfully")'
+docker exec image-compressor python -c 'import redis,os; r=redis.Redis(host=os.getenv("REDIS_HOST","redis"),port=int(os.getenv("REDIS_PORT","6379")),db=int(os.getenv("REDIS_DB","0")),password=os.getenv("REDIS_PASSWORD") or None); print("Redis:",r.ping()); print("Cache header test endpoint ready")'
 
 docker ps
 
