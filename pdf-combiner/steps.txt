@@ -1,1 +1,5 @@
-python3 -m py_compile app.py && docker build -t pdf-combiner:latest . && docker rm -f pdf-combiner && docker run -d --name pdf-combiner --network media-tools-network --restart unless-stopped -e PORT=5005 -p 5005:5005 pdf-combiner:latest
+# Build and run container
+docker build -t pdf-combiner:latest . && docker rm -f pdf-combiner && docker run -d --name pdf-combiner --network media-tools-network --restart unless-stopped -e PORT=5005 -p 5005:5005 pdf-combiner:latest
+
+# Import Redis cache
+docker exec pdf-combiner python -c 'import redis_cache_hooks,redis,os; r=redis.Redis(host=os.getenv("REDIS_HOST"),port=int(os.getenv("REDIS_PORT")),db=int(os.getenv("REDIS_DB")),password=os.getenv("REDIS_PASSWORD")); print("PDF Combiner Redis cache hooks imported successfully"); print("Redis:",r.ping()); print("Keys:",r.keys("*"))'
