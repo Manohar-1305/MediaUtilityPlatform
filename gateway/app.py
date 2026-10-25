@@ -569,6 +569,107 @@ def support_bot(path):
             if key.lower() not in ("content-encoding", "content-length", "transfer-encoding", "connection")
         ],
     )
+# PDF Combiner proxy
+@app.route("/pdf-combiner", defaults={"path": ""}, methods=["GET", "POST"])
+@app.route("/pdf-combiner/", defaults={"path": ""}, methods=["GET", "POST"])
+@app.route("/pdf-combiner/<path:path>", methods=["GET", "POST"])
+def pdf_combiner_proxy(path):
+    target_url = f"{SERVICES['pdf-combiner'].rstrip('/')}/{path.lstrip('/')}"
+
+    try:
+        upstream = requests.request(
+            method=request.method,
+            url=target_url,
+            params=request.args,
+            data=request.form,
+            files=[
+                (field, (uploaded.filename, uploaded.stream, uploaded.content_type))
+                for field in request.files
+                for uploaded in request.files.getlist(field)
+            ],
+            headers={
+                key: value
+                for key, value in request.headers
+                if key.lower() not in (
+                    "host", "content-length", "connection", "content-type"
+                )
+            },
+            timeout=180,
+            allow_redirects=False
+        )
+
+        excluded_headers = {
+            "content-encoding", "transfer-encoding", "connection"
+        }
+        response_headers = [
+            (key, value)
+            for key, value in upstream.headers.items()
+            if key.lower() not in excluded_headers
+        ]
+
+        return Response(
+            upstream.content,
+            status=upstream.status_code,
+            headers=response_headers
+        )
+
+    except requests.RequestException:
+        return jsonify({
+            "error": "PDF Combiner service is unavailable."
+        }), 502
+
+
+# Legacy PDF Combiner endpoint used by fetch("/merge")
+@app.route("/merge", defaults={"path": ""}, methods=["GET", "POST"])
+@app.route("/merge/", defaults={"path": ""}, methods=["GET", "POST"])
+@app.route("/merge/<path:path>", methods=["GET", "POST"])
+def pdf_combiner_legacy_proxy(path):
+    target_url = f"{SERVICES['pdf-combiner'].rstrip('/')}/merge"
+
+    try:
+        upstream = requests.request(
+            method=request.method,
+            url=target_url,
+            params=request.args,
+            data=request.form,
+            files=[
+                (field, (uploaded.filename, uploaded.stream, uploaded.content_type))
+                for field in request.files
+                for uploaded in request.files.getlist(field)
+            ],
+            headers={
+                key: value
+                for key, value in request.headers
+                if key.lower() not in (
+                    "host", "content-length", "connection", "content-type"
+                )
+            },
+            timeout=180,
+            allow_redirects=False
+        )
+
+        excluded_headers = {
+            "content-encoding", "transfer-encoding", "connection"
+        }
+        response_headers = [
+            (key, value)
+            for key, value in upstream.headers.items()
+            if key.lower() not in excluded_headers
+        ]
+
+        return Response(
+            upstream.content,
+            status=upstream.status_code,
+            headers=response_headers
+        )
+
+    except requests.RequestException:
+        return jsonify({
+            "error": "PDF Combiner service is unavailable."
+        }), 502
+
+
+
 
 if __name__ == "__main__":
     app.run(
