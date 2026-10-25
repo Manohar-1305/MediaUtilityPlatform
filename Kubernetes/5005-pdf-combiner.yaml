@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pdf-combiner
+  namespace: media-tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pdf-combiner
+  template:
+    metadata:
+      labels:
+        app: pdf-combiner
+    spec:
+      containers:
+        - name: pdf-combiner
+          image: manoharshetty507/pdf-combiner:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 5005
+          envFrom:
+            - configMapRef:
+                name: media-tools-config
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: media-tools-secrets
+                  key: REDIS_PASSWORD
+          readinessProbe:
+            tcpSocket:
+              port: 5005
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 5005
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pdf-combiner
+  namespace: media-tools
+spec:
+  selector:
+    app: pdf-combiner
+  ports:
+    - name: http
+      port: 5005
+      targetPort: http

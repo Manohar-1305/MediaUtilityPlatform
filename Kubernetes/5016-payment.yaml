@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment
+  namespace: media-tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment
+  template:
+    metadata:
+      labels:
+        app: payment
+    spec:
+      containers:
+        - name: payment
+          image: manoharshetty507/payment:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 5016
+          envFrom:
+            - configMapRef:
+                name: media-tools-config
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: media-tools-secrets
+                  key: REDIS_PASSWORD
+          readinessProbe:
+            tcpSocket:
+              port: 5016
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 5016
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment
+  namespace: media-tools
+spec:
+  selector:
+    app: payment
+  ports:
+    - name: http
+      port: 5016
+      targetPort: http

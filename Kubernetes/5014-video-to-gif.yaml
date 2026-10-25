@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: video-to-gif
+  namespace: media-tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: video-to-gif
+  template:
+    metadata:
+      labels:
+        app: video-to-gif
+    spec:
+      containers:
+        - name: video-to-gif
+          image: manoharshetty507/video-to-gif:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 5014
+          envFrom:
+            - configMapRef:
+                name: media-tools-config
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: media-tools-secrets
+                  key: REDIS_PASSWORD
+          readinessProbe:
+            tcpSocket:
+              port: 5014
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 5014
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: video-to-gif
+  namespace: media-tools
+spec:
+  selector:
+    app: video-to-gif
+  ports:
+    - name: http
+      port: 5014
+      targetPort: http

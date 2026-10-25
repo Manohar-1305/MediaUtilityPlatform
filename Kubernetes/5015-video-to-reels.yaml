@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: video-to-reels
+  namespace: media-tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: video-to-reels
+  template:
+    metadata:
+      labels:
+        app: video-to-reels
+    spec:
+      containers:
+        - name: video-to-reels
+          image: manoharshetty507/video-to-reels:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 5015
+          envFrom:
+            - configMapRef:
+                name: media-tools-config
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: media-tools-secrets
+                  key: REDIS_PASSWORD
+          readinessProbe:
+            tcpSocket:
+              port: 5015
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 5015
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: video-to-reels
+  namespace: media-tools
+spec:
+  selector:
+    app: video-to-reels
+  ports:
+    - name: http
+      port: 5015
+      targetPort: http

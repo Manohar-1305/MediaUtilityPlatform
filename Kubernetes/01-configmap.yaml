@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: media-tools-config
+  namespace: media-tools
+data:
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  REDIS_CACHE_TTL: "3600"
+  REDIS_CACHE_MAX_BYTES: "5242880"
+  AUDIO_CUTTER_URL: "http://audio-cutter:5001"
+  AUDIO_JOINER_URL: "http://audio-joiner:5002"
+  VIDEO_CUTTER_URL: "http://video-cutter:5003"
+  PDF_CONVERTER_URL: "http://pdf-converter:5004"
+  PDF_COMBINER_URL: "http://pdf-combiner:5005"
+  USER_SERVICE_URL: "http://user:5006"
+  AUDIO_TO_VIDEO_URL: "http://audio-to-video:5007"
+  IMAGE_TO_PDF_URL: "http://image-to-pdf:5008"
+  PDF_TO_JPG_URL: "http://pdf-to-jpg:5009"
+  VIDEO_SUBTITLE_URL: "http://video-subtitle:5010"
+  WORD_TO_PDF_URL: "http://word-to-pdf:5011"
+  PDF_TO_WORD_URL: "http://pdf-to-word:5012"
+  IMAGE_COMPRESSOR_URL: "http://image-compressor:5013"
+  VIDEO_TO_GIF_URL: "http://video-to-gif:5014"
+  VIDEO_TO_REELS_URL: "http://video-to-reels:5015"
+  PAYMENT_URL: "http://payment:5016"
+  SUPPORT_BOT_URL: "http://support-bot:5017"

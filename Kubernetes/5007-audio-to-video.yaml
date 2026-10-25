@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audio-to-video
+  namespace: media-tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: audio-to-video
+  template:
+    metadata:
+      labels:
+        app: audio-to-video
+    spec:
+      containers:
+        - name: audio-to-video
+          image: manoharshetty507/audio-to-video:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 5007
+          envFrom:
+            - configMapRef:
+                name: media-tools-config
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: media-tools-secrets
+                  key: REDIS_PASSWORD
+          readinessProbe:
+            tcpSocket:
+              port: 5007
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 5007
+            initialDelaySeconds: 20
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audio-to-video
+  namespace: media-tools
+spec:
+  selector:
+    app: audio-to-video
+  ports:
+    - name: http
+      port: 5007
+      targetPort: http
