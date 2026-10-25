@@ -1,3 +1,9 @@
 docker build -t pdf-to-jpg:latest .
 docker run -d --name pdf-to-jpg --network media-tools-network -p 5009:5009 --restart unless-stopped pdf-to-jpg:latest
 docker logs -f pdf-to-jpg
+
+# Build & Run
+docker build -t pdf-to-jpg:latest . && docker rm -f pdf-to-jpg 2>/dev/null; docker run -d --name pdf-to-jpg --restart unless-stopped --env REDIS_HOST=redis --env REDIS_PORT=6379 --env REDIS_DB=0 --env REDIS_PASSWORD='Redis123!' --env REDIS_CACHE_TTL=3600 --env REDIS_CACHE_MAX_BYTES=104857600 --network media-tools-network -p 5009:5009 pdf-to-jpg:latest
+
+# Enable Redis 
+docker exec pdf-to-jpg python -c 'from redis_cache import redis_client; print("Redis cache module imported"); print("Redis connection:", redis_client.ping()); keys=redis_client.keys("media-tools:pdf-to-jpg:conversion:*"); print("PDF-to-JPG cache entries:",len(keys))'
