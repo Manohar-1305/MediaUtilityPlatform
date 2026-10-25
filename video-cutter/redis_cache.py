@@ -1,8 +1,11 @@
 import hashlib
 import json
+import logging
 import os
 
 import redis
+
+logger = logging.getLogger(__name__)
 
 redis_client = redis.Redis(
     host=os.getenv("REDIS_HOST", "redis"),
@@ -16,7 +19,7 @@ redis_client = redis.Redis(
 )
 
 CACHE_TTL = int(os.getenv("REDIS_CACHE_TTL", "3600"))
-CACHE_MAX_BYTES = int(os.getenv("REDIS_CACHE_MAX_BYTES", "5242880"))
+CACHE_MAX_BYTES = int(os.getenv("REDIS_CACHE_MAX_BYTES", "104857600"))
 
 
 def cache_key(service, file_bytes, settings=None):
@@ -33,14 +36,17 @@ def cache_get(key):
     try:
         return redis_client.get(key)
     except redis.RedisError:
+        logger.exception("Redis GET failed")
         return None
 
 
 def cache_set(key, output_bytes):
     if len(output_bytes) > CACHE_MAX_BYTES:
         return False
+
     try:
-        redis_client.setex(key, CACHE_TTL, output_bytes)
-        return True
+        result = redis_client.setex(key, CACHE_TTL, output_bytes)
+        return bool(result)
     except redis.RedisError:
+        logger.exception("Redis SETEX failed")
         return False
