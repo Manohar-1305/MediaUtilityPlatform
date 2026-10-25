@@ -1,3 +1,4 @@
 cd ~/MediaUtilityPlatform/mysql && docker rm -f media-tools-mysql 2>/dev/null; docker run -d --name media-tools-mysql --network media-tools-network --network-alias media-mysql --restart unless-stopped -p 127.0.0.1:3307:3306 --env-file ~/MediaUtilityPlatform/mysql/.env -v media-mysql-data:/var/lib/mysql mysql:8.4
 
+# This command works
 docker rm -f media-tools-mysql 2>/dev/null; docker run -d --name media-tools-mysql --network media-tools-network --network-alias media-mysql --restart unless-stopped -p 127.0.0.1:3307:3306 --env-file .env -v media-mysql-data:/var/lib/mysql mysql:8.4
