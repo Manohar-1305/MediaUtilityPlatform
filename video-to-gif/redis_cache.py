@@ -16,7 +16,9 @@ redis_client = redis.Redis(
 )
 
 CACHE_TTL = int(os.getenv("REDIS_CACHE_TTL", "3600"))
-CACHE_MAX_BYTES = int(os.getenv("REDIS_CACHE_MAX_BYTES", "5242880"))
+CACHE_MAX_BYTES = int(
+    os.getenv("REDIS_CACHE_MAX_BYTES", str(100 * 1024 * 1024))
+)
 
 
 def cache_key(service, file_bytes, settings=None):
@@ -26,7 +28,7 @@ def cache_key(service, file_bytes, settings=None):
     digest.update(file_bytes)
     digest.update(b"\0")
     digest.update(json.dumps(settings or {}, sort_keys=True).encode())
-    return "media-tools:conversion:" + digest.hexdigest()
+    return f"media-tools:{service}:conversion:{digest.hexdigest()}"
 
 
 def cache_get(key):
@@ -40,7 +42,6 @@ def cache_set(key, output_bytes):
     if len(output_bytes) > CACHE_MAX_BYTES:
         return False
     try:
-        redis_client.setex(key, CACHE_TTL, output_bytes)
-        return True
+        return bool(redis_client.setex(key, CACHE_TTL, output_bytes))
     except redis.RedisError:
         return False
