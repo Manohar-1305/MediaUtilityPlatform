@@ -5,3 +5,6 @@ go run .
 
 docker build -t support-bot .
 docker run -d --name support-bot --network media-tools-network -p 5017:5017 support-bot
+
+# Build & Run container
+docker build -t micro-bot . && docker rm -f micro-bot && docker run -d --name micro-bot --network media-tools-network --network-alias support-bot --restart unless-stopped -p 5017:5017 micro-bot
