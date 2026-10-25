@@ -64,6 +64,29 @@ def compress_image():
     try:
         uploaded_data = uploaded_file.read()
 
+        settings = {
+            "quality": quality,
+            "format_hint": extension,
+        }
+        key = cache_key("image-compressor", uploaded_data, settings)
+        cached = cache_get(key)
+
+        if cached is not None:
+            response = send_file(
+                io.BytesIO(cached),
+                mimetype={
+                    ".jpg": "image/jpeg",
+                    ".jpeg": "image/jpeg",
+                    ".png": "image/png",
+                    ".webp": "image/webp",
+                }.get(extension, "application/octet-stream"),
+                as_attachment=True,
+                download_name=Path(original_name).stem + "-compressed" + extension,
+                max_age=0,
+            )
+            response.headers["X-Redis-Cache"] = "HIT"
+            return response
+
         if not uploaded_data:
             return jsonify({"error": "The uploaded file is empty."}), 400
 
@@ -133,6 +156,7 @@ def compress_image():
             output.seek(0)
 
             compressed_size = len(output.getbuffer())
+            cache_set(key, output.getvalue())
             original_size = len(uploaded_data)
 
             output_extension = {
@@ -153,6 +177,7 @@ def compress_image():
                 max_age=0,
             )
 
+            response.headers["X-Redis-Cache"] = "MISS"
             response.headers["X-Original-Size"] = str(original_size)
             response.headers["X-Compressed-Size"] = str(compressed_size)
             response.headers["X-Compression-Saved"] = str(
