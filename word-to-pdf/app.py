@@ -1,5 +1,3 @@
-from redis_cache import cache_key, cache_get, cache_set
-
 import io
 import logging
 from pathlib import Path
@@ -8,13 +6,10 @@ from flask import Flask, jsonify, render_template, request, send_file
 from docx import Document
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer,
-    PageBreak,
-)
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from xml.sax.saxutils import escape
+
+from redis_cache import cache_key, cache_get, cache_set
 from redis_cache_hooks import init_redis_cache
 
 app = Flask(__name__)
@@ -25,6 +20,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = {".docx"}
+DOCX_TO_PDF_PREFIX = "media-tools:word-to-pdf:conversion:"
 
 
 @app.route("/", methods=["GET"])
@@ -55,8 +51,28 @@ def convert():
         }), 400
 
     try:
-        document = Document(io.BytesIO(uploaded_file.read()))
+        docx_data = uploaded_file.read()
 
+        if not docx_data:
+            return jsonify({"error": "The selected Word document is empty."}), 400
+
+        key = cache_key("word-to-pdf", docx_data)
+
+        try:
+            cached_pdf = cache_get(key)
+            if cached_pdf:
+                logger.info("Redis cache HIT: filename=%s", filename)
+                return send_file(
+                    io.BytesIO(cached_pdf),
+                    mimetype="application/pdf",
+                    as_attachment=True,
+                    download_name=f"{Path(filename).stem}.pdf",
+                )
+            logger.info("Redis cache MISS: filename=%s", filename)
+        except Exception:
+            logger.exception("Redis cache read failed")
+
+        document = Document(io.BytesIO(docx_data))
         pdf_buffer = io.BytesIO()
         styles = getSampleStyleSheet()
 
@@ -80,8 +96,11 @@ def convert():
                 continue
 
             safe_text = escape(text).replace("\n", "<br/>")
-            style = styles["Title"] if paragraph.style.name == "Title" else styles["Normal"]
-
+            style = (
+                styles["Title"]
+                if paragraph.style.name == "Title"
+                else styles["Normal"]
+            )
             story.append(Paragraph(safe_text, style))
             story.append(Spacer(1, 6))
 
@@ -95,13 +114,26 @@ def convert():
                 story.append(Spacer(1, 4))
 
         if not story:
-            story.append(Paragraph("The document contains no text.", styles["Normal"]))
+            story.append(
+                Paragraph("The document contains no text.", styles["Normal"])
+            )
 
         pdf.build(story)
-        pdf_buffer.seek(0)
+        pdf_data = pdf_buffer.getvalue()
+
+        try:
+            if cache_set(key, pdf_data):
+                logger.info("Redis cache STORE: filename=%s", filename)
+            else:
+                logger.warning(
+                    "Redis cache STORE skipped or failed: filename=%s",
+                    filename,
+                )
+        except Exception:
+            logger.exception("Redis cache write failed")
 
         return send_file(
-            pdf_buffer,
+            io.BytesIO(pdf_data),
             mimetype="application/pdf",
             as_attachment=True,
             download_name=f"{Path(filename).stem}.pdf",
