@@ -1,0 +1,902 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Converter | Media Tools</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #0b1120;
+            --panel: #121c30;
+            --panel-light: #18253c;
+            --border: #293750;
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+            --orange: #ff8a24;
+            --orange-hover: #ff7410;
+            --green: #34d399;
+            --red: #fb7185;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background:
+                radial-gradient(ellipse at 15% 10%, #1d3155 0, transparent 42%),
+                radial-gradient(ellipse at 90% 85%, #422717 0, transparent 32%),
+                var(--bg);
+            color: var(--text);
+        }
+
+        .navbar {
+            height: 78px;
+            padding: 0 6%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(148, 163, 184, .13);
+            background: rgba(11, 17, 32, .72);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 19px;
+            font-weight: 800;
+            letter-spacing: -.5px;
+        }
+
+        .brand-icon {
+            display: grid;
+            place-items: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 13px;
+            color: #fff;
+            background: linear-gradient(135deg, #ffad55, #f97316);
+            box-shadow: 0 5px 22px rgba(249, 115, 22, .25);
+            font-size: 21px;
+        }
+
+        .brand span span {
+            color: var(--orange);
+        }
+
+        .home-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 11px 17px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--panel);
+            transition: .2s ease;
+        }
+
+        .home-btn:hover {
+            border-color: var(--orange);
+            color: var(--orange);
+            transform: translateY(-1px);
+        }
+
+        main {
+            width: min(100% - 32px, 920px);
+            margin: 68px auto 50px;
+        }
+
+        .heading {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 13px;
+            margin-bottom: 19px;
+            border: 1px solid rgba(255, 138, 36, .25);
+            border-radius: 100px;
+            color: #ffb46e;
+            background: rgba(255, 138, 36, .08);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1.3px;
+            text-transform: uppercase;
+        }
+
+        .eyebrow-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--orange);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--orange);
+        }
+
+        h1 {
+            margin-bottom: 16px;
+            font-size: clamp(32px, 5vw, 49px);
+            line-height: 1.15;
+            letter-spacing: -2px;
+            font-weight: 800;
+        }
+
+        h1 .accent {
+            color: var(--orange);
+        }
+
+        .subtitle {
+            max-width: 550px;
+            margin: auto;
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        .converter-card {
+            padding: 30px;
+            border: 1px solid var(--border);
+            border-radius: 23px;
+            background: linear-gradient(145deg, rgba(24, 37, 60, .96), rgba(15, 25, 43, .98));
+            box-shadow: 0 25px 80px rgba(0, 0, 0, .27);
+        }
+
+        .card-heading {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            margin-bottom: 24px;
+        }
+
+        .document-icon {
+            display: grid;
+            place-items: center;
+            width: 47px;
+            height: 47px;
+            border-radius: 14px;
+            background: rgba(255, 138, 36, .12);
+            font-size: 23px;
+        }
+
+        .card-heading h2 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .card-heading p {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .dropzone {
+            min-height: 225px;
+            padding: 28px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border: 2px dashed #40506a;
+            border-radius: 17px;
+            background: rgba(8, 15, 28, .42);
+            cursor: pointer;
+            transition: .25s ease;
+        }
+
+        .dropzone:hover,
+        .dropzone.dragover {
+            border-color: var(--orange);
+            background: rgba(255, 138, 36, .055);
+        }
+
+        .upload-icon {
+            display: grid;
+            place-items: center;
+            width: 65px;
+            height: 65px;
+            margin-bottom: 18px;
+            border-radius: 19px;
+            background: #25334a;
+            font-size: 29px;
+        }
+
+        .dropzone h3 {
+            margin-bottom: 9px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .dropzone p {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .browse-text {
+            color: var(--orange);
+            font-weight: 700;
+        }
+
+        .file-types {
+            margin-top: 17px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .file-type {
+            padding: 6px 10px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            color: #cbd5e1;
+            background: #172238;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .file-info {
+            display: none;
+            align-items: center;
+            gap: 13px;
+            margin-top: 18px;
+            padding: 15px;
+            border: 1px solid #35445b;
+            border-radius: 12px;
+            background: rgba(8, 15, 28, .42);
+        }
+
+        .file-info.visible {
+            display: flex;
+        }
+
+        .file-badge {
+            display: grid;
+            place-items: center;
+            width: 43px;
+            height: 43px;
+            flex-shrink: 0;
+            border-radius: 10px;
+            color: #ffb46e;
+            background: rgba(255, 138, 36, .13);
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .file-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            overflow: hidden;
+            color: var(--text);
+            font-size: 13px;
+            font-weight: 600;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-size {
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .remove-file {
+            width: 33px;
+            height: 33px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            color: #cbd5e1;
+            background: transparent;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .remove-file:hover {
+            color: var(--red);
+            border-color: var(--red);
+        }
+
+        .action-btn {
+            width: 100%;
+            min-height: 51px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 22px;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 11px;
+            color: #211204;
+            background: linear-gradient(135deg, #ffad55, #ff8120);
+            box-shadow: 0 7px 24px rgba(255, 138, 36, .18);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: .2s ease;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #ffb96f, #ff7410);
+            box-shadow: 0 10px 30px rgba(255, 138, 36, .3);
+            transform: translateY(-1px);
+        }
+
+        .action-btn:disabled {
+            opacity: .65;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .action-btn.secondary {
+            display: none;
+            margin-top: 12px;
+            color: #211204;
+            background: linear-gradient(135deg, #ffad55, #ff8120);
+        }
+
+        .action-btn.secondary.visible {
+            display: flex;
+        }
+
+        .spinner {
+            width: 17px;
+            height: 17px;
+            border: 2px solid rgba(33, 18, 4, .28);
+            border-top-color: #211204;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-section {
+            display: none;
+            margin-top: 23px;
+        }
+
+        .progress-section.visible {
+            display: block;
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+            color: #cbd5e1;
+            font-size: 12px;
+        }
+
+        #progress-percent {
+            color: var(--orange);
+            font-weight: 800;
+        }
+
+        .progress-track {
+            height: 7px;
+            overflow: hidden;
+            border-radius: 100px;
+            background: #293750;
+        }
+
+        .progress-fill {
+            width: 0;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #ffad55, #ff7410);
+            transition: width .25s ease;
+        }
+
+        .message {
+            display: none;
+            margin-top: 18px;
+            padding: 13px 15px;
+            border-radius: 10px;
+            font-size: 12px;
+            line-height: 1.7;
+            overflow-wrap: anywhere;
+        }
+
+        .message.visible {
+            display: block;
+        }
+
+        .message.success {
+            border: 1px solid rgba(52, 211, 153, .25);
+            color: #6ee7b7;
+            background: rgba(52, 211, 153, .07);
+        }
+
+        .message.error {
+            border: 1px solid rgba(251, 113, 133, .25);
+            color: #fda4af;
+            background: rgba(251, 113, 133, .07);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-top: 23px;
+        }
+
+        .feature {
+            padding: 18px 12px;
+            text-align: center;
+            border: 1px solid rgba(41, 55, 80, .8);
+            border-radius: 13px;
+            background: rgba(18, 28, 48, .55);
+        }
+
+        .feature-icon {
+            margin-bottom: 10px;
+            font-size: 21px;
+        }
+
+        .feature h3 {
+            margin-bottom: 6px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .feature p {
+            color: var(--muted);
+            font-size: 10px;
+            line-height: 1.6;
+        }
+
+        footer {
+            padding: 0 20px 30px;
+            text-align: center;
+            color: #718096;
+            font-size: 11px;
+        }
+
+        @media (max-width: 600px) {
+            .navbar {
+                height: 68px;
+                padding: 0 18px;
+            }
+
+            .brand {
+                font-size: 15px;
+            }
+
+            .brand-icon {
+                width: 36px;
+                height: 36px;
+            }
+
+            .home-btn {
+                padding: 9px 11px;
+                font-size: 12px;
+            }
+
+            main {
+                margin-top: 43px;
+            }
+
+            .heading {
+                margin-bottom: 27px;
+            }
+
+            h1 {
+                letter-spacing: -1.2px;
+            }
+
+            .subtitle {
+                font-size: 13px;
+            }
+
+            .converter-card {
+                padding: 19px;
+                border-radius: 18px;
+            }
+
+            .dropzone {
+                min-height: 205px;
+            }
+
+            .features {
+                gap: 8px;
+            }
+
+            .feature {
+                padding: 14px 7px;
+            }
+
+            .feature h3 {
+                font-size: 11px;
+            }
+
+            .feature p {
+                font-size: 9px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar">
+        <div class="brand">
+            <div class="brand-icon">⇄</div>
+            <span>Media<span>Tools</span></span>
+        </div>
+
+        <a class="home-btn" href="/" aria-label="Go to home">
+            <span>⌂</span> Home
+        </a>
+    </header>
+
+    <main>
+        <section class="heading">
+            <div class="eyebrow">
+                <span class="eyebrow-dot"></span>
+                Document conversion
+            </div>
+
+            <h1>Documents to PDF.<br><span class="accent">Made simple.</span></h1>
+
+            <p class="subtitle">
+                Convert your Word documents into professional PDF files in seconds.
+                Upload your document, convert it, and download your PDF.
+            </p>
+        </section>
+
+        <section class="converter-card">
+            <div class="card-heading">
+                <div class="document-icon">📄</div>
+                <div>
+                    <h2>PDF Converter</h2>
+                    <p>Word document to PDF conversion</p>
+                </div>
+            </div>
+
+            <form id="converter-form">
+                <label class="dropzone" id="dropzone" for="file-input">
+                    <div class="upload-icon">↑</div>
+                    <h3 id="drop-title">Drop your document here</h3>
+                    <p>
+                        or <span class="browse-text">browse files</span> from your computer
+                    </p>
+
+                    <div class="file-types">
+                        <span class="file-type">.DOC</span>
+                        <span class="file-type">.DOCX</span>
+                        <span class="file-type">MAX 50 MB</span>
+                    </div>
+                </label>
+
+                <input
+                    type="file"
+                    id="file-input"
+                    name="file"
+                    accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                >
+
+                <div class="file-info" id="file-info">
+                    <div class="file-badge" id="file-badge">DOCX</div>
+                    <div class="file-details">
+                        <div class="file-name" id="file-name"></div>
+                        <div class="file-size" id="file-size"></div>
+                    </div>
+                    <button type="button" class="remove-file" id="remove-file" aria-label="Remove file">×</button>
+                </div>
+
+                <button type="submit" class="action-btn" id="convert-btn">
+                    <span>⇄</span>
+                    <span id="convert-btn-text">Convert to PDF</span>
+                </button>
+
+                <div class="progress-section" id="progress-section">
+                    <div class="progress-labels">
+                        <span id="progress-text">Preparing your document...</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+
+                <div class="message" id="message" role="status" aria-live="polite"></div>
+
+                <button type="button" class="action-btn secondary" id="download-btn">
+                    <span>↓</span>
+                    Download PDF
+                </button>
+            </form>
+        </section>
+
+        <section class="features">
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <h3>Fast Conversion</h3>
+                <p>Convert documents in moments</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">📑</div>
+                <h3>Quality Output</h3>
+                <p>Preserve document formatting</p>
+            </div>
+
+            <div class="feature">
+                <div class="feature-icon">✓</div>
+                <h3>Simple Process</h3>
+                <p>Upload, convert, and download</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        MediaTools · Document conversion made simple
+    </footer>
+
+    <script>
+        const form = document.getElementById("converter-form");
+        const input = document.getElementById("file-input");
+        const dropzone = document.getElementById("dropzone");
+        const fileInfo = document.getElementById("file-info");
+        const fileName = document.getElementById("file-name");
+        const fileSize = document.getElementById("file-size");
+        const fileBadge = document.getElementById("file-badge");
+        const removeBtn = document.getElementById("remove-file");
+        const convertBtn = document.getElementById("convert-btn");
+        const convertBtnText = document.getElementById("convert-btn-text");
+        const downloadBtn = document.getElementById("download-btn");
+        const progressSection = document.getElementById("progress-section");
+        const progressFill = document.getElementById("progress-fill");
+        const progressPercent = document.getElementById("progress-percent");
+        const progressText = document.getElementById("progress-text");
+        const message = document.getElementById("message");
+
+        let selectedFile = null;
+        let convertedBlob = null;
+        let downloadName = "converted.pdf";
+        let progressTimer = null;
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + " B";
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+            return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+        }
+
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = "message visible " + type;
+        }
+
+        function clearMessage() {
+            message.textContent = "";
+            message.className = "message";
+        }
+
+        function setProgress(value, text) {
+            const percent = Math.min(100, Math.max(0, value));
+            progressFill.style.width = percent + "%";
+            progressPercent.textContent = percent + "%";
+            if (text) progressText.textContent = text;
+        }
+
+        function resetProgress() {
+            clearInterval(progressTimer);
+            progressTimer = null;
+            progressSection.classList.remove("visible");
+            setProgress(0, "Preparing your document...");
+        }
+
+        function resetOutput() {
+            convertedBlob = null;
+            downloadBtn.classList.remove("visible");
+            clearMessage();
+            resetProgress();
+        }
+
+        function selectFile(file) {
+            resetOutput();
+
+            if (!file) return;
+
+            const extension = file.name.split(".").pop().toLowerCase();
+
+            if (!["doc", "docx"].includes(extension)) {
+                showMessage("Please select a Word document (.doc or .docx).", "error");
+                return;
+            }
+
+            if (file.size > 50 * 1024 * 1024) {
+                showMessage("The maximum supported file size is 50 MB.", "error");
+                return;
+            }
+
+            if (file.size === 0) {
+                showMessage("The selected file is empty. Please choose another document.", "error");
+                return;
+            }
+
+            selectedFile = file;
+            input.value = "";
+
+            fileName.textContent = file.name;
+            fileSize.textContent = formatSize(file.size);
+            fileBadge.textContent = extension.toUpperCase();
+            fileInfo.classList.add("visible");
+            document.getElementById("drop-title").textContent = "Document selected";
+        }
+
+        input.addEventListener("change", () => {
+            if (input.files.length) selectFile(input.files[0]);
+        });
+
+        ["dragenter", "dragover"].forEach(eventName => {
+            dropzone.addEventListener(eventName, event => {
+                event.preventDefault();
+                dropzone.classList.add("dragover");
+            });
+        });
+
+        ["dragleave", "drop"].forEach(eventName => {
+            dropzone.addEventListener(eventName, event => {
+                event.preventDefault();
+                dropzone.classList.remove("dragover");
+            });
+        });
+
+        dropzone.addEventListener("drop", event => {
+            const file = event.dataTransfer.files[0];
+            if (file) selectFile(file);
+        });
+
+        removeBtn.addEventListener("click", () => {
+            selectedFile = null;
+            fileInfo.classList.remove("visible");
+            document.getElementById("drop-title").textContent = "Drop your document here";
+            input.value = "";
+            resetOutput();
+        });
+
+        form.addEventListener("submit", async event => {
+            event.preventDefault();
+
+            if (!selectedFile) {
+                showMessage("Please choose a Word document before converting.", "error");
+                return;
+            }
+
+            resetOutput();
+            convertBtn.disabled = true;
+            convertBtn.innerHTML = '<span class="spinner"></span><span>Converting...</span>';
+            progressSection.classList.add("visible");
+            setProgress(5, "Uploading your document...");
+
+            let progress = 5;
+            progressTimer = setInterval(() => {
+                if (progress < 88) {
+                    progress += progress < 40 ? 5 : progress < 70 ? 2 : 1;
+                    setProgress(progress, progress < 30
+                        ? "Uploading your document..."
+                        : "Converting document to PDF...");
+                }
+            }, 500);
+
+            try {
+                const data = new FormData();
+                data.append("file", selectedFile);
+
+                const response = await fetch("/pdf-converter/convert-file", {
+                    method: "POST",
+                    body: data
+                });
+
+                if (!response.ok) {
+                    let errorText = "Conversion failed. Please try again.";
+                    const contentType = response.headers.get("content-type") || "";
+
+                    if (contentType.includes("application/json")) {
+                        const result = await response.json();
+                        errorText = result.error || result.message || errorText;
+                    } else {
+                        const result = await response.text();
+                        if (result && result.length < 500) {
+                            errorText = result.replace(/<[^>]*>/g, " ").trim() || errorText;
+                        }
+                    }
+
+                    throw new Error(errorText);
+                }
+
+                const blob = await response.blob();
+
+                if (blob.size === 0 || (
+                    blob.type &&
+                    !blob.type.includes("pdf") &&
+                    !blob.type.includes("octet-stream")
+                )) {
+                    throw new Error("The server did not return a valid PDF file.");
+                }
+
+                const signature = new Uint8Array(await blob.slice(0, 5).arrayBuffer());
+                if (String.fromCharCode(...signature) !== "%PDF-") {
+                    throw new Error("The server response is not a valid PDF document.");
+                }
+
+                convertedBlob = blob;
+                const originalName = selectedFile.name.replace(/\.(docx?)$/i, "");
+                downloadName = originalName + ".pdf";
+
+                clearInterval(progressTimer);
+                progressTimer = null;
+                setProgress(100, "Conversion completed!");
+
+                showMessage("Your PDF is ready. Click the orange button below to download it.", "success");
+                downloadBtn.classList.add("visible");
+                convertBtnText.textContent = "Convert Again";
+
+            } catch (error) {
+                clearInterval(progressTimer);
+                progressTimer = null;
+                progressSection.classList.remove("visible");
+                showMessage(error.message || "Unable to connect to the conversion service.", "error");
+            } finally {
+                convertBtn.disabled = false;
+                convertBtn.innerHTML = '<span>⇄</span><span id="convert-btn-text">Convert to PDF</span>';
+
+                if (convertedBlob) {
+                    convertBtn.querySelector("span:last-child").textContent = "Convert Again";
+                }
+            }
+        });
+
+        downloadBtn.addEventListener("click", () => {
+            if (!convertedBlob) {
+                showMessage("Please convert your document first.", "error");
+                return;
+            }
+
+            downloadBtn.disabled = true;
+            downloadBtn.innerHTML = '<span class="spinner"></span><span>Preparing download...</span>';
+
+            const url = URL.createObjectURL(convertedBlob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = downloadName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = "<span>↓</span><span>Download PDF</span>";
+        });
+    </script>
+</body>
+</html>
