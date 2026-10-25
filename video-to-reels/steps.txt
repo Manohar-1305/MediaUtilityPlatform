@@ -1,3 +1,4 @@
+# Build & run
 docker build -t video-to-reels:latest . && docker rm -f video-to-reels 2>/dev/null; docker run -d --name video-to-reels --restart unless-stopped --env-file .env --network media-tools-network -p 5015:5015 video-to-reels:latest
 
 # Enable Redis
@@ -6,3 +7,4 @@ docker exec video-to-reels python -c 'from redis_cache import redis_client; prin
 docker ps
 
 docker logs -f video-to-reels
+
