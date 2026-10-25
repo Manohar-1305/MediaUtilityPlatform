@@ -16,6 +16,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
+COPY redis_cache.py .
+COPY redis_cache_hooks.py .
 COPY templates ./templates
 
 RUN useradd --system --uid 10001 --create-home appuser \
@@ -25,4 +27,4 @@ USER 10001
 
 EXPOSE 5011
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5011", "--workers", "1", "--timeout", "150", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5011", "--workers", "1", "--timeout", "150", "app:app"]root@ubuntu:~/MediaUtilityPlatform/word-to-pdf
