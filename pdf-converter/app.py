@@ -1,5 +1,6 @@
-cat > app.py <<'EOF'
+import hashlib
 import io
+import json
 import logging
 import os
 import shutil
@@ -9,18 +10,28 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request, send_file
 
-app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
+from redis_cache import cache_get, cache_key, cache_set, redis_client
 
 logging.basicConfig(level=logging.INFO)
 
+app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
+
+
 @app.get("/health")
 def health():
+    try:
+        redis_ok = bool(redis_client.ping())
+    except Exception:
+        redis_ok = False
+
     return jsonify(
         status="healthy",
         service="pdf-converter",
         libreoffice=shutil.which("libreoffice") is not None,
+        redis=redis_ok,
     )
+
 
 @app.post("/convert-file")
 def convert_file():
@@ -30,13 +41,13 @@ def convert_file():
         return jsonify(error="Upload a Word document using the file field."), 400
 
     filename = Path(uploaded.filename).name
+    extension = Path(filename).suffix.lower()
 
-    if Path(filename).suffix.lower() not in {".doc", ".docx"}:
+    if extension not in {".doc", ".docx"}:
         return jsonify(error="Only DOC and DOCX files are supported."), 400
 
     libreoffice = shutil.which("libreoffice")
     if not libreoffice:
-        app.logger.error("LibreOffice is not installed.")
         return jsonify(error="Document conversion is unavailable."), 500
 
     document_data = uploaded.read()
@@ -44,7 +55,31 @@ def convert_file():
     if not document_data:
         return jsonify(error="The uploaded document is empty."), 400
 
+    settings = {
+        "extension": extension,
+        "format": "pdf",
+        "converter_version": "libreoffice-pdf-v1",
+    }
+
+    digest = hashlib.sha256(document_data).digest()
+    key = cache_key("pdf-converter", digest, settings)
+
     try:
+        cached_pdf = cache_get(key)
+
+        if cached_pdf is not None and cached_pdf.startswith(b"%PDF-"):
+            app.logger.info("Redis cache HIT: %s", key)
+            return send_file(
+                io.BytesIO(cached_pdf),
+                mimetype="application/pdf",
+                as_attachment=True,
+                download_name=Path(filename).stem + ".pdf",
+                max_age=0,
+                etag=False,
+            ), 200, {"X-Redis-Cache": "HIT"}
+
+        app.logger.info("Redis cache MISS: %s", key)
+
         with tempfile.TemporaryDirectory(prefix="pdf_converter_") as temp_dir:
             workdir = Path(temp_dir)
             input_path = workdir / filename
@@ -86,16 +121,26 @@ def convert_file():
             pdf_data = output_path.read_bytes()
 
             if not pdf_data.startswith(b"%PDF-"):
-                app.logger.error("LibreOffice produced an invalid PDF.")
                 return jsonify(error="The converted PDF is invalid."), 500
+
+        if cache_set(key, pdf_data):
+            app.logger.info(
+                "Redis cache STORE: %s (%d bytes)", key, len(pdf_data)
+            )
+        else:
+            app.logger.warning(
+                "Redis cache STORE skipped or failed: %s (%d bytes)",
+                key, len(pdf_data)
+            )
 
         return send_file(
             io.BytesIO(pdf_data),
             mimetype="application/pdf",
             as_attachment=True,
-            download_name=input_path.stem + ".pdf",
+            download_name=Path(filename).stem + ".pdf",
             max_age=0,
-        )
+            etag=False,
+        ), 200, {"X-Redis-Cache": "MISS"}
 
     except subprocess.TimeoutExpired:
         return jsonify(error="Conversion timed out. Try a smaller document."), 504
@@ -104,11 +149,11 @@ def convert_file():
         app.logger.exception("PDF conversion failed")
         return jsonify(error="An unexpected conversion error occurred."), 500
 
+
 @app.errorhandler(413)
 def file_too_large(_error):
     return jsonify(error="Maximum upload size is 50 MB."), 413
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5004, debug=False)
 
-# ssh -i hetzner.key root@2.31.25.111
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5004")), debug=False)
