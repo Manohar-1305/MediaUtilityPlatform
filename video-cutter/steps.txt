@@ -4,4 +4,4 @@ docker build --no-cache -t video-cutter:latest . && docker run -d --name video-c
 
 
 # Enable redis cache and verify
-docker exec video-cutter python -c 'import redis_cache_hooks,redis,os; r=redis.Redis(host=os.getenv("REDIS_HOST"),port=int(os.getenv("REDIS_PORT","6379")),db=int(os.getenv("REDIS_DB","0")),password=os.getenv("REDIS_PASSWORD")); print("Video Cutter Redis cache hooks imported successfully"); print("Redis:",r.ping()); print("Keys:",r.keys("*"))'
+docker exec video-cutter python -c 'import redis_cache,redis_cache_hooks,redis,os; r=redis.Redis(host=os.getenv("REDIS_HOST","redis"),port=int(os.getenv("REDIS_PORT","6379")),db=int(os.getenv("REDIS_DB","0")),password=os.getenv("REDIS_PASSWORD") or None); print("Redis cache imports successful"); print("Redis connected:",r.ping()); print("Keys:",r.keys("*"))'
