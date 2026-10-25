@@ -5,7 +5,7 @@ import os
 import zipfile
 import logging
 
-import fitz
+import pymupdf as fitz
 from PIL import Image
 from flask import (
     Flask,
@@ -56,6 +56,7 @@ def get_pdf():
         if not pdf_bytes:
             return None, (jsonify(error="The uploaded PDF is empty."), 400)
 
+        request.environ["pdf_to_jpg_input_bytes"] = pdf_bytes
         document = fitz.open(stream=pdf_bytes, filetype="pdf")
 
         if document.needs_pass:
@@ -209,6 +210,10 @@ def convert_pdf():
     document, filename = result
 
     try:
+        pdf_bytes = request.environ.get("pdf_to_jpg_input_bytes")
+        if pdf_bytes is None:
+            return jsonify(error="Unable to read uploaded PDF bytes."), 400
+
         mode = request.form.get("mode", "pages")
         quality_name = request.form.get("quality", "normal")
         dpi = int(request.form.get("dpi", "150"))
@@ -240,6 +245,18 @@ def convert_pdf():
 
         if not selected_pages:
             selected_pages = set(range(1, len(document) + 1))
+
+        cache_settings = {"mode": mode, "quality": quality_name, "dpi": dpi, "selected": sorted(selected_pages)}
+        key = cache_key("pdf-to-jpg", pdf_bytes, cache_settings)
+        try:
+            cached_output = cache_get(key)
+            if cached_output is not None:
+                logger.info("Redis cache HIT: filename=%s", filename)
+                cached_name = f"{Path(filename).stem}-images.zip" if mode == "extract" else f"{Path(filename).stem}-images.zip"
+                return send_file(io.BytesIO(cached_output), mimetype="application/zip", as_attachment=True, download_name=cached_name)
+            logger.info("Redis cache MISS: filename=%s", filename)
+        except Exception:
+            logger.exception("Redis cache read failed")
 
         output_files = []
 
@@ -278,6 +295,11 @@ def convert_pdf():
 
         if len(output_files) == 1:
             image_name, image_data = output_files[0]
+            try:
+                if cache_set(key, image_data):
+                    logger.info("Redis cache STORE: filename=%s", filename)
+            except Exception:
+                logger.exception("Redis cache write failed")
             return send_file(
                 io.BytesIO(image_data),
                 mimetype="image/jpeg",
@@ -297,7 +319,17 @@ def convert_pdf():
                 zip_file.writestr(image_name, image_data)
 
         archive.seek(0)
+        archive_data = archive.getvalue()
+        try:
+            if cache_set(key, archive_data):
+                logger.info("Redis cache STORE: filename=%s", filename)
+            else:
+                logger.warning("Redis cache STORE skipped or failed: filename=%s", filename)
+        except Exception:
+            logger.exception("Redis cache write failed")
 
+        archive = io.BytesIO(archive_data)
+        archive.seek(0)
         base_name = os.path.splitext(filename)[0]
         return send_file(
             archive,
@@ -326,4 +358,3 @@ if __name__ == "__main__":
         port=int(os.getenv("PORT", "5009")),
         debug=False,
         threaded=True,
-    )
