@@ -1,5 +1,4 @@
 Flask
 pypdf
-python-docxredis>=5,<7
-
+python-docx
 redis>=5,<7
