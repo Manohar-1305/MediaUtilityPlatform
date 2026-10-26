@@ -100,6 +100,12 @@ header a.about-button:hover {
   text-decoration: none !important;
 }
 
+
+header a.about-button:focus-visible {
+  outline: 3px solid #86efac !important;
+  outline-offset: 3px !important;
+}
+
 .account-menu {
   position: relative;
   flex-shrink: 0;
