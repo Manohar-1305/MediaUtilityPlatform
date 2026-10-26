@@ -36,10 +36,7 @@ MAX_LOGIN_ATTEMPTS = int(os.getenv("REDIS_LOGIN_MAX_ATTEMPTS", "5"))
 LOGIN_WINDOW_SECONDS = int(os.getenv("REDIS_LOGIN_WINDOW_SECONDS", "900"))
 RESET_PASSWORD_TTL_SECONDS = 900
 
-PASSWORD_RESET_URL = os.getenv(
-    "PASSWORD_RESET_URL",
-    f"{request.host_url.rstrip('/')}/user/forgot-password"
-)
+PASSWORD_RESET_URL = os.environ["PASSWORD_RESET_URL"].rstrip("/")
 INCREMENT_LOGIN_FAILURE_SCRIPT = """
 local count = redis.call('INCR', KEYS[1])
 if count == 1 then
