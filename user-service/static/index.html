@@ -15,43 +15,79 @@
             <p id="page-description">Create an account to get started.</p>
 
             <div class="tabs">
-                <button id="register-tab" type="button" onclick="showMode('register')">
+                <button
+                    id="register-tab"
+                    type="button"
+                    onclick="showMode('register')">
                     Create Account
                 </button>
-                <button id="login-tab" type="button" onclick="showMode('login')">
+
+                <button
+                    id="login-tab"
+                    type="button"
+                    onclick="showMode('login')">
                     Login
                 </button>
             </div>
 
             <form id="register-form">
                 <label for="register-username">Username</label>
-                <input id="register-username" name="username"
-                       autocomplete="username" required>
+                <input
+                    id="register-username"
+                    name="username"
+                    autocomplete="username"
+                    required>
 
                 <label for="register-email">Email</label>
-                <input id="register-email" name="email" type="email"
-                       autocomplete="email" required>
+                <input
+                    id="register-email"
+                    name="email"
+                    type="email"
+                    autocomplete="email"
+                    required>
 
                 <label for="register-password">Password</label>
-                <input id="register-password" name="password" type="password"
-                       autocomplete="new-password" minlength="8" required>
+                <input
+                    id="register-password"
+                    name="password"
+                    type="password"
+                    autocomplete="new-password"
+                    minlength="8"
+                    required>
 
-                <button class="submit-button" type="submit">Create Account</button>
+                <button class="submit-button" type="submit">
+                    Create Account
+                </button>
             </form>
 
             <form id="login-form" hidden>
                 <label for="login-username">Username or Email</label>
-                <input id="login-username" name="username"
-                       autocomplete="username" required>
+                <input
+                    id="login-username"
+                    name="username"
+                    autocomplete="username"
+                    required>
 
                 <label for="login-password">Password</label>
-                <input id="login-password" name="password" type="password"
-                       autocomplete="current-password" required>
+                <input
+                    id="login-password"
+                    name="password"
+                    type="password"
+                    autocomplete="current-password"
+                    required>
 
-                <button class="submit-button" type="submit">Login</button>
+                <p>
+                    <a href="/user/forgot-password">
+                        Forgot password?
+                    </a>
+                </p>
+
+                <button class="submit-button" type="submit">
+                    Login
+                </button>
             </form>
 
-            <p id="message" role="status"></p>
+            <p id="message" role="status" aria-live="polite"></p>
         </section>
     </main>
 
@@ -71,17 +107,21 @@
 
             document.getElementById("page-description").textContent =
                 isLogin
-                    ? "Sign in to your account."
+                    ? "Sign in using your username/email and password."
                     : "Create an account to get started.";
 
-            document.getElementById("register-tab").classList.toggle("active", !isLogin);
-            document.getElementById("login-tab").classList.toggle("active", isLogin);
+            document.getElementById("register-tab")
+                .classList.toggle("active", !isLogin);
+
+            document.getElementById("login-tab")
+                .classList.toggle("active", isLogin);
 
             message.textContent = "";
             message.className = "";
 
             const url = new URL(window.location.href);
             url.searchParams.set("mode", mode);
+
             window.history.replaceState({}, "", url);
         }
 
@@ -92,7 +132,17 @@
             message.className = "";
 
             const form = event.currentTarget;
-            const payload = Object.fromEntries(new FormData(form).entries());
+            const submitButton = form.querySelector(
+                'button[type="submit"]'
+            );
+            const originalText = submitButton.textContent;
+
+            submitButton.disabled = true;
+            submitButton.textContent = "Please wait...";
+
+            const payload = Object.fromEntries(
+                new FormData(form).entries()
+            );
 
             try {
                 const response = await fetch("/user/" + endpoint, {
@@ -106,7 +156,9 @@
                 const result = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(result.error || "Request failed");
+                    throw new Error(
+                        result.error || "Request failed."
+                    );
                 }
 
                 if (endpoint === "login") {
@@ -114,30 +166,39 @@
                         "mediaToolsUsername",
                         result.user.username
                     );
+
                     window.location.href = "/";
                     return;
                 }
 
                 form.reset();
                 showMode("login");
+
                 message.textContent =
                     "Account created successfully. You can now log in.";
+
                 message.className = "success";
 
             } catch (error) {
                 message.textContent =
-                    error.message || "Unable to contact the user service.";
+                    error.message ||
+                    "Unable to contact the user service.";
+
                 message.className = "error";
+
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
             }
         }
 
-        registerForm.addEventListener("submit", event =>
-            submitForm(event, "register")
-        );
+        registerForm.addEventListener("submit", event => {
+            submitForm(event, "register");
+        });
 
-        loginForm.addEventListener("submit", event =>
-            submitForm(event, "login")
-        );
+        loginForm.addEventListener("submit", event => {
+            submitForm(event, "login");
+        });
 
         const initialMode =
             new URLSearchParams(window.location.search).get("mode");
