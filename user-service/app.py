@@ -32,7 +32,8 @@ redis_client = redis.Redis(
 )
 
 MAX_LOGIN_ATTEMPTS = int(os.getenv("REDIS_LOGIN_MAX_ATTEMPTS", "5"))
-LOGIN_WINDOW_SECONDS = int(os.getenv("REDIS_LOGIN_WINDOW_SECONDS", "900"))
+LOGIN_WINDOW_SECONDS = int(os.getenv("LOGIN_WINDOW_SECONDS", "900"))
+RESET_PASSWORD_TTL_SECONDS = 900
 
 INCREMENT_LOGIN_FAILURE_SCRIPT = """
 local count = redis.call('INCR', KEYS[1])
@@ -62,6 +63,13 @@ def get_login_attempt_key(identity):
     return f"media-tools:login-attempts:{identity_hash}"
 
 
+def get_reset_password_key(email):
+    email_hash = hashlib.sha256(
+        email.strip().lower().encode("utf-8")
+    ).hexdigest()
+    return f"media-tools:password-reset:{email_hash}"
+
+
 def is_login_rate_limited(key):
     attempts = redis_client.get(key)
     return attempts is not None and int(attempts) >= MAX_LOGIN_ATTEMPTS
@@ -86,19 +94,31 @@ def send_temporary_password(email, temporary_password):
         raise RuntimeError("Gmail SMTP credentials are not configured")
 
     message = EmailMessage()
-    message["Subject"] = "Media Tools - Temporary Password"
+    message["Subject"] = "Media Tools - Password Reset"
     message["From"] = gmail_username
     message["To"] = email
+
     message.set_content(
         f"""Hello,
 
-Your temporary Media Tools password is:
+We received a request to reset your Media Tools password.
+
+Your temporary password is:
 
 {temporary_password}
 
-Sign in to Media Tools using this password, then change it from your account dashboard.
+This temporary password expires in 15 minutes.
 
-If you did not request this password reset, please contact support.
+To reset your password:
+1. Open the Media Tools password reset page.
+2. Enter your registered email address.
+3. Enter this temporary password.
+4. Set and confirm your new password.
+5. Log in using your new password.
+
+The temporary password cannot be used to log in.
+
+If you did not request this reset, you can ignore this email.
 
 Regards,
 Media Tools
@@ -214,6 +234,7 @@ def login():
     username_or_email = str(
         data.get("username", data.get("email", ""))
     ).strip().lower()
+
     password = str(data.get("password", ""))
 
     if not username_or_email or not password:
@@ -296,9 +317,12 @@ def forgot_password():
     if not email:
         return jsonify(error="Email is required"), 400
 
-    connection = get_db()
+    reset_key = get_reset_password_key(email)
+    connection = None
 
     try:
+        connection = get_db()
+
         with connection.cursor() as cursor:
             cursor.execute(
                 "SELECT id FROM users WHERE LOWER(email) = %s",
@@ -308,34 +332,175 @@ def forgot_password():
 
         if user is None:
             return jsonify(
-                message="If the email is registered, a temporary password has been sent."
+                message=(
+                    "If the email is registered, a temporary password "
+                    "has been sent."
+                )
             ), 200
 
-        temporary_password = secrets.token_urlsafe(12)
-        password_hash = generate_password_hash(temporary_password)
+        temporary_password = secrets.token_urlsafe(24)
+        temporary_password_hash = generate_password_hash(
+            temporary_password
+        )
 
-        send_temporary_password(email, temporary_password)
+        redis_client.set(
+            reset_key,
+            temporary_password_hash,
+            ex=RESET_PASSWORD_TTL_SECONDS,
+        )
+
+        try:
+            send_temporary_password(email, temporary_password)
+        except Exception:
+            try:
+                redis_client.delete(reset_key)
+            except redis.RedisError:
+                app.logger.exception(
+                    "Failed to remove temporary password after email failure"
+                )
+            raise
+
+        return jsonify(
+            message=(
+                "If the email is registered, a temporary password "
+                "has been sent. It expires in 15 minutes."
+            )
+        ), 200
+
+    except redis.RedisError:
+        app.logger.exception("Redis password-reset operation failed")
+        return jsonify(
+            error="Password reset service temporarily unavailable"
+        ), 503
+
+    except Exception:
+        app.logger.exception("Password reset email delivery failed")
+        return jsonify(
+            error="Unable to send the temporary password. Please try again later."
+        ), 500
+
+    finally:
+        if connection is not None:
+            connection.close()
+
+
+@app.route("/reset-password", methods=["POST"])
+def reset_password():
+    data = request.get_json(silent=True) or request.form
+
+    email = str(data.get("email", "")).strip().lower()
+    temporary_password = str(data.get("temporary_password", ""))
+    new_password = str(data.get("new_password", ""))
+    confirm_password = str(data.get("confirm_password", ""))
+
+    if (
+        not email
+        or not temporary_password
+        or not new_password
+        or not confirm_password
+    ):
+        return jsonify(
+            error=(
+                "Email, temporary password, new password "
+                "and confirmation are required"
+            )
+        ), 400
+
+    if len(new_password) < 8:
+        return jsonify(
+            error="New password must contain at least 8 characters"
+        ), 400
+
+    if new_password != confirm_password:
+        return jsonify(
+            error="New password and confirmation do not match"
+        ), 400
+
+    reset_key = get_reset_password_key(email)
+    connection = None
+
+    try:
+        stored_password_hash = redis_client.get(reset_key)
+
+        if stored_password_hash is None:
+            return jsonify(
+                error=(
+                    "Temporary password is invalid or expired. "
+                    "Request a new one."
+                )
+            ), 401
+
+        if not check_password_hash(
+            stored_password_hash,
+            temporary_password,
+        ):
+            return jsonify(
+                error="Invalid temporary password"
+            ), 401
+
+        connection = get_db()
 
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET password_hash = %s WHERE id = %s",
-                (password_hash, user["id"]),
+                "SELECT id FROM users WHERE LOWER(email) = %s",
+                (email,),
+            )
+            user = cursor.fetchone()
+
+            if user is None:
+                return jsonify(
+                    error="Invalid password reset request"
+                ), 400
+
+            cursor.execute(
+                """
+                UPDATE users
+                SET password_hash = %s
+                WHERE id = %s
+                """,
+                (
+                    generate_password_hash(new_password),
+                    user["id"],
+                ),
             )
 
         connection.commit()
 
-    except Exception:
-        connection.rollback()
-        app.logger.exception("Password reset failed")
-        return jsonify(
-            error="Unable to process the password reset. Please try again later."
-        ), 500
-    finally:
-        connection.close()
+        try:
+            redis_client.delete(reset_key)
+        except redis.RedisError:
+            app.logger.exception(
+                "Password updated, but reset-token cleanup failed"
+            )
 
-    return jsonify(
-        message="If the email is registered, a temporary password has been sent."
-    ), 200
+        return jsonify(
+            message=(
+                "Password changed successfully. "
+                "Log in using your new password."
+            )
+        ), 200
+
+    except redis.RedisError:
+        if connection is not None:
+            connection.rollback()
+
+        app.logger.exception("Redis password-reset validation failed")
+        return jsonify(
+            error="Password reset service temporarily unavailable"
+        ), 503
+
+    except Exception:
+        if connection is not None:
+            connection.rollback()
+
+        app.logger.exception("Password update failed")
+        return jsonify(
+            error="Unable to reset your password. Please try again later."
+        ), 500
+
+    finally:
+        if connection is not None:
+            connection.close()
 
 
 @app.route("/change-password", methods=["POST"])
@@ -345,12 +510,16 @@ def change_password():
     username_or_email = str(
         data.get("username", data.get("email", ""))
     ).strip().lower()
+
     current_password = str(data.get("current_password", ""))
     new_password = str(data.get("new_password", ""))
 
     if not username_or_email or not current_password or not new_password:
         return jsonify(
-            error="Username/email, current password and new password are required"
+            error=(
+                "Username/email, current password and new password "
+                "are required"
+            )
         ), 400
 
     if len(new_password) < 8:
@@ -381,8 +550,15 @@ def change_password():
 
         with connection.cursor() as cursor:
             cursor.execute(
-                "UPDATE users SET password_hash = %s WHERE id = %s",
-                (generate_password_hash(new_password), user["id"]),
+                """
+                UPDATE users
+                SET password_hash = %s
+                WHERE id = %s
+                """,
+                (
+                    generate_password_hash(new_password),
+                    user["id"],
+                ),
             )
 
         connection.commit()
