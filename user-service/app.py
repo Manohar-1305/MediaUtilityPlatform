@@ -4,7 +4,7 @@ import smtplib
 import hashlib
 from email.message import EmailMessage
 from pathlib import Path
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 import pymysql
 import redis
@@ -89,6 +89,21 @@ def record_failed_login(key):
     )
 
 
+def get_password_reset_url(email):
+    gateway_url = request.host_url.rstrip("/")
+    forwarded_host = request.headers.get("X-Forwarded-Host", "").strip()
+    forwarded_proto = request.headers.get("X-Forwarded-Proto", "").strip()
+
+    if forwarded_host:
+        scheme = forwarded_proto or urlsplit(gateway_url).scheme
+        gateway_url = f"{scheme}://{forwarded_host}"
+
+    return (
+        f"{gateway_url}/user/forgot-password"
+        f"?{urlencode({'mode': 'reset', 'email': email})}"
+    )
+
+
 def send_temporary_password(email, temporary_password):
     gmail_username = os.environ.get("GMAIL_USERNAME")
     gmail_app_password = os.environ.get("GMAIL_APP_PASSWORD")
@@ -96,28 +111,7 @@ def send_temporary_password(email, temporary_password):
     if not gmail_username or not gmail_app_password:
         raise RuntimeError("Gmail SMTP credentials are not configured")
 
-    # Derive the public reset URL from the incoming browser request.
-    # The request is served through the user microservice gateway at /user.
-    origin = request.headers.get("Origin", "").rstrip("/")
-
-    if not origin:
-        referer = request.headers.get("Referer", "")
-        if referer:
-            from urllib.parse import urlsplit
-
-            parsed_referer = urlsplit(referer)
-            origin = f"{parsed_referer.scheme}://{parsed_referer.netloc}"
-
-    if not origin:
-        origin = request.host_url.rstrip("/")
-
-    reset_base_url = f"{origin}/user/forgot-password"
-    reset_link = (
-        f"{reset_base_url}?{urlencode({
-            'mode': 'reset',
-            'email': email,
-        })}"
-    )
+    reset_link = get_password_reset_url(email)
 
     message = EmailMessage()
     message["Subject"] = "Media Tools - Reset Your Password"
