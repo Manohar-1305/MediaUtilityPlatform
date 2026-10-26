@@ -156,6 +156,11 @@ def forward_request(service_name, path=""):
             service=service_name,
         ), 502
 
+# About section
+# about section
+@app.route("/about/")
+def about():
+    return send_from_directory(STATIC_DIR, "about.html")
 
 # Video subtitle
 @app.route("/video-subtitle", methods=["GET"])
