@@ -6,6 +6,7 @@ from email.message import EmailMessage
 from pathlib import Path
 from urllib.parse import urlencode
 
+
 import pymysql
 import redis
 from pymysql.cursors import DictCursor
@@ -36,9 +37,7 @@ MAX_LOGIN_ATTEMPTS = int(os.getenv("REDIS_LOGIN_MAX_ATTEMPTS", "5"))
 LOGIN_WINDOW_SECONDS = int(os.getenv("REDIS_LOGIN_WINDOW_SECONDS", "900"))
 RESET_PASSWORD_TTL_SECONDS = 900
 
-reset_link = (
-    f"{PASSWORD_RESET_URL}?{urlencode({'mode': 'reset', 'email': email)}"
-)
+reset_link = f"{PASSWORD_RESET_URL}?{urlencode({'mode': 'reset', 'email': email})}"
 INCREMENT_LOGIN_FAILURE_SCRIPT = """
 local count = redis.call('INCR', KEYS[1])
 if count == 1 then
