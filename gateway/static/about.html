@@ -1,105 +1,555 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About | Media Tools</title>
-    <link rel="stylesheet" href="/user/static/style.css">
-    <style>
-        .about-section {
-            margin-top: 24px;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111827" />
+  <meta name="description" content="Learn about Media Tools, our media and document utilities, technology, and contact information." />
+  <title>About Us - Media Tools</title>
 
-        .about-section h2 {
-            margin-bottom: 8px;
-            font-size: 18px;
-            color: #c7d2fe;
-        }
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-        .about-section p {
-            color: #cbd5e1;
-            line-height: 1.8;
-            overflow-wrap: anywhere;
-        }
+    html {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+    }
 
-        .about-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 28px;
-        }
+    body {
+      width: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #f8fafc;
+      background:
+        radial-gradient(
+          ellipse at 15% 15%,
+          rgba(124, 58, 237, 0.25),
+          transparent 40%
+        ),
+        radial-gradient(
+          ellipse at 85% 25%,
+          rgba(14, 165, 233, 0.18),
+          transparent 40%
+        ),
+        linear-gradient(135deg, #080d1c, #111a35 50%, #0b1020);
+      background-attachment: fixed;
+      overflow-x: hidden;
+    }
 
-        .about-actions a {
-            flex: 1;
-            min-width: 130px;
-            padding: 12px 16px;
-            border: 1px solid rgba(255,255,255,.15);
-            border-radius: 9px;
-            background: #6366f1;
-            color: white;
-            text-align: center;
-            text-decoration: none;
-        }
+    a {
+      -webkit-tap-highlight-color: transparent;
+    }
 
-        .about-actions a.secondary {
-            background: transparent;
-            color: #c7d2fe;
-        }
-    </style>
+    .about-page {
+      flex: 1 0 auto;
+      width: 100%;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 32px clamp(20px, 6vw, 90px) 60px;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .about-back {
+      display: inline-block;
+      margin-bottom: 32px;
+      color: #a5b4fc;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .about-back:hover {
+      color: #c4b5fd;
+    }
+
+    .about-intro {
+      width: 100%;
+      margin-bottom: 38px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .about-intro h1 {
+      margin: 0 0 18px;
+      color: #fff;
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 750;
+      line-height: 1.2;
+      letter-spacing: -0.8px;
+    }
+
+    .about-intro p {
+      max-width: 1200px;
+      margin: 0;
+      color: #cbd5e1;
+      font-size: clamp(16px, 1.8vw, 19px);
+      line-height: 1.9;
+    }
+
+    .about-section {
+      width: 100%;
+      margin-bottom: 40px;
+    }
+
+    .about-section h2 {
+      margin: 0 0 15px;
+      color: #c4b5fd;
+      font-size: clamp(22px, 3vw, 27px);
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .about-section h3 {
+      margin: 24px 0 8px;
+      color: #e0e7ff;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .about-section p {
+      max-width: 1200px;
+      margin: 0 0 16px;
+      color: #d1d5db;
+      font-size: 16px;
+      line-height: 1.9;
+      overflow-wrap: anywhere;
+    }
+
+    .about-section strong {
+      color: #f1f5f9;
+    }
+
+    .about-contact {
+      margin-top: 44px;
+      padding-top: 30px;
+      border-top: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .about-contact a:not(.about-home-button) {
+      color: #a5b4fc;
+      font-weight: 700;
+      text-decoration: none;
+      overflow-wrap: anywhere;
+    }
+
+    .about-contact a:not(.about-home-button):hover {
+      color: #c4b5fd;
+      text-decoration: underline;
+    }
+
+    .about-home-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      margin-top: 12px;
+      padding: 11px 22px;
+      border: 1px solid rgba(165, 180, 252, 0.25);
+      border-radius: 8px;
+      color: #fff;
+      background: #4f46e5;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+    }
+
+    .about-home-button:hover {
+      background: #4338ca;
+      transform: translateY(-2px);
+    }
+
+    footer {
+      flex-shrink: 0;
+      width: 100%;
+      margin-top: auto;
+      padding: 20px 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
+      color: #c4b5fd;
+      background: rgba(8, 13, 28, 0.85);
+      text-align: center;
+      font-size: 13px;
+    }
+
+    @media (max-width: 760px) {
+      .about-page {
+        padding: 26px 24px 45px;
+      }
+
+      .about-intro {
+        margin-bottom: 30px;
+        padding-bottom: 24px;
+      }
+
+      .about-section {
+        margin-bottom: 32px;
+      }
+
+      .about-section p {
+        font-size: 15px;
+        line-height: 1.85;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .about-page {
+        padding: 22px 18px 38px;
+      }
+
+      .about-back {
+        margin-bottom: 25px;
+      }
+
+      .about-intro h1 {
+        font-size: 31px;
+      }
+
+      .about-intro p {
+        font-size: 15px;
+      }
+
+      .about-section h2 {
+        font-size: 22px;
+      }
+
+      .about-section h3 {
+        margin-top: 22px;
+        font-size: 17px;
+      }
+
+      .about-section p {
+        font-size: 14px;
+        line-height: 1.85;
+      }
+
+      .about-contact {
+        margin-top: 32px;
+        padding-top: 24px;
+      }
+
+      footer {
+        padding: 17px 12px;
+        font-size: 12px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
 </head>
+
 <body>
-    <main class="account-container">
-        <a class="back-link" href="/">← Media Tools</a>
+  <main class="about-page">
+    <a href="/" class="about-back">← Media Tools</a>
 
-        <section class="account-card">
-            <h1>About Media Tools</h1>
-            <p>
-                A central place to access tools that simplify everyday
-                media and document tasks.
-            </p>
+    <section class="about-intro">
+      <h1>About Media Tools</h1>
 
-            <div class="about-section">
-                <h2>What is Media Tools?</h2>
-                <p>
-                    Media Tools brings useful media and document utilities
-                    together in one website. The goal is to make common
-                    file-processing tasks straightforward and convenient.
-                </p>
-            </div>
+      <p>
+        Media Tools is an online platform created to make everyday media
+        processing and document management simpler, faster and more
+        convenient. The website brings together a collection of utilities
+        for audio, video, images and PDF documents, allowing users to perform
+        common file-related tasks from one place rather than switching
+        between multiple applications. Whether you need to trim a recording,
+        prepare a video for social media, combine documents or reduce an
+        image's file size, Media Tools provides a straightforward starting
+        point for completing these tasks.
+      </p>
+    </section>
 
-            <div class="about-section">
-                <h2>Available tools</h2>
-                <p>
-                    Depending on the tools enabled on this website, you can
-                    work with audio, video, images and PDF documents, including
-                    converting, combining, trimming and preparing files for
-                    different uses.
-                </p>
-            </div>
+    <section class="about-section">
+      <h2>Our Tools and Their Purpose</h2>
 
-            <div class="about-section">
-                <h2>Your account</h2>
-                <p>
-                    Create an account to use account-related features.
-                    Keep your password private and use the password-recovery
-                    option if you cannot access your account.
-                </p>
-            </div>
+      <p>
+        Each tool focuses on a particular task and is designed to make the
+        process understandable. Select the relevant tool, provide a supported
+        file, configure the available options and retrieve the processed
+        output. Supported formats and processing options may vary between
+        tools.
+      </p>
 
-            <div class="about-section">
-                <h2>Our goal</h2>
-                <p>
-                    Provide a simple, accessible and consistent experience
-                    for everyday media and document workflows.
-                </p>
-            </div>
+      <h3>Audio Cutter</h3>
+      <p>
+        Audio Cutter lets you trim an audio file to a selected section.
+        It is useful when you need to extract a particular part of a longer
+        recording, create a short audio clip, remove unwanted sections or
+        prepare a sound file for a presentation or another project. By
+        selecting the relevant portion, you can focus on the audio you
+        actually need rather than keeping the entire recording.
+      </p>
 
-            <div class="about-actions">
-                <a href="/">Explore Media Tools</a>
-                <a class="secondary" href="/user/?mode=login">Login</a>
-            </div>
-        </section>
-    </main>
+      <h3>Audio Joiner</h3>
+      <p>
+        Audio Joiner combines multiple supported audio files into a single
+        output file. It can help when assembling recordings, voice segments,
+        music clips or other related audio content. Instead of managing
+        several separate files, you can bring them together into one file
+        that is easier to share, organise or use in another project.
+      </p>
+
+      <h3>Video Cutter</h3>
+      <p>
+        Video Cutter helps trim a video by selecting the required start and
+        end points. It is useful for removing unnecessary footage, extracting
+        important moments, shortening recordings and preparing clips for
+        sharing. Whether you are working with a personal recording, a
+        demonstration or other supported video content, trimming helps you
+        keep the relevant portion.
+      </p>
+
+      <h3>Audio to Video</h3>
+      <p>
+        Audio to Video converts an audio file into an MP4 video, with an
+        optional image to accompany the audio. This is useful when you want
+        to publish a recording, narration or music on a platform that accepts
+        video uploads. Adding a suitable image can provide a visual element
+        while the audio remains the primary content.
+      </p>
+
+      <h3>PDF Converter</h3>
+      <p>
+        PDF Converter is intended to convert supported files into PDF format.
+        PDF is widely used for sharing documents because it can help preserve
+        document presentation across different devices. This tool can be
+        useful when preparing reports, letters, records and other supported
+        documents for distribution, printing or archiving.
+      </p>
+
+      <h3>PDF Combiner</h3>
+      <p>
+        PDF Combiner merges multiple PDF documents into one file. It can help
+        consolidate related reports, invoices, forms, study materials or
+        application documents. Keeping related pages together can make a
+        collection of documents easier to review, store, distribute and
+        manage.
+      </p>
+
+      <h3>Image to PDF</h3>
+      <p>
+        Image to PDF converts multiple supported images into a downloadable
+        PDF document. This is useful for combining photographs, scanned
+        pages, receipts, diagrams or other images into one document that can
+        be shared, printed or stored. It can be especially convenient when
+        images need to be submitted together as a document.
+      </p>
+
+      <h3>PDF to JPG</h3>
+      <p>
+        PDF to JPG helps convert PDF pages into JPG images. Where supported,
+        it can also extract embedded images from a PDF. These capabilities
+        are useful when a page needs to be shared as an image, displayed
+        separately or reused in another workflow. Page selection and ZIP
+        downloads help manage selected pages or multiple resulting images.
+      </p>
+
+      <h3>Video Subtitle</h3>
+      <p>
+        Video Subtitle allows users to add subtitles from an SRT subtitle
+        file to a supported video and download the resulting video. Subtitles
+        can make spoken content easier to follow, improve accessibility and
+        help viewers understand dialogue. This tool is suitable for preparing
+        videos that need accompanying captions. The current tool specifies
+        a maximum video upload size of 100 MB.
+      </p>
+
+      <h3>Word to PDF</h3>
+      <p>
+        Word to PDF converts supported Word documents into PDF files. It is
+        useful for preparing reports, letters, assignments and other
+        documents for sharing. PDF output can make a document easier to
+        distribute without requiring every recipient to use the same word
+        processing application.
+      </p>
+
+      <h3>PDF to Word</h3>
+      <p>
+        PDF to Word converts supported PDF documents into editable Word
+        documents. This can save time when you need to revise existing
+        content, update a report or reuse text from an earlier document
+        instead of recreating everything manually. The final formatting and
+        editability depend on the structure and contents of the original PDF.
+      </p>
+
+      <h3>Image Compressor</h3>
+      <p>
+        Image Compressor helps reduce image file sizes while aiming to
+        preserve useful visual quality. Smaller images can be easier to
+        upload, share and store, especially when working with multiple images
+        or websites that impose file-size limits. The result depends on the
+        original image and the compression options available.
+      </p>
+
+      <h3>Video to GIF</h3>
+      <p>
+        Video to GIF converts supported video clips into animated GIF files.
+        It is useful for creating short looping animations for demonstrations,
+        messages, presentations and websites. Configurable options such as
+        duration, frame rate and output width help tailor the animation to
+        its intended use and balance visual detail with output size.
+      </p>
+
+      <h3>Video to Reels</h3>
+      <p>
+        Video to Reels converts supported videos into vertical 9:16 MP4
+        videos suitable for formats such as YouTube Shorts and Instagram
+        Reels. Options for the start time, duration and output resolution
+        help prepare a clip for vertical viewing. This is useful when
+        adapting longer footage into a shorter format intended for mobile
+        audiences and social media platforms.
+      </p>
+    </section>
+
+    <section class="about-section">
+      <h2>How Media Tools Is Built</h2>
+
+      <p>
+        Media Tools is developed as a web application with a frontend for
+        user interaction and backend services for handling application
+        requests and media-related operations. The frontend uses HTML to
+        structure pages, CSS to define the visual appearance and responsive
+        layouts, and JavaScript to support interactive behaviour such as
+        account menus and the support chat interface.
+      </p>
+
+      <p>
+        Python and Flask are used on the backend for web routing and
+        application integration. Flask receives requests for different
+        website routes and helps connect the user interface to the relevant
+        functionality. A gateway serves as an entry point to the application
+        and routes requests to the appropriate pages or services. This
+        arrangement provides a central location for managing access to the
+        website's available functionality.
+      </p>
+
+      <p>
+        The application uses a service-oriented approach so different
+        processing capabilities can be organised and maintained separately.
+        This structure can make it easier to update an individual capability,
+        troubleshoot issues and introduce additional tools without requiring
+        every part of the application to be redesigned at once.
+      </p>
+
+      <p>
+        Docker is used to package application components into containers,
+        helping maintain consistent runtime environments across deployments.
+        Containerisation can simplify how services are started, configured,
+        updated and managed. The gateway and its associated services work
+        together to provide the website experience, while the implementation
+        of each individual media operation may differ.
+      </p>
+
+      <p>
+        The overall objective is to combine a simple user experience with
+        an application structure that can grow over time. As new needs arise,
+        the platform can be extended with additional utilities, improvements
+        to existing workflows and support for further file formats.
+      </p>
+    </section>
+
+    <section class="about-section">
+      <h2>Our Approach to Usability</h2>
+
+      <p>
+        We believe commonly needed media and document operations should be
+        straightforward to find and use. The website is organised around
+        individual tools so users can identify the task they want to
+        complete without navigating through unrelated features. Responsive
+        layouts help the interface adapt to desktop, tablet and mobile
+        screens.
+      </p>
+
+      <p>
+        Different files can have different technical requirements, and
+        conversion results may depend on the format, quality, size and
+        structure of the source material. Users should review the available
+        tool options and verify important outputs before using them in
+        critical workflows. Keeping an original copy of important files is
+        also recommended.
+      </p>
+
+      <p>
+        Please do not upload confidential or sensitive files unless you
+        understand and are comfortable with the website's applicable
+        privacy and data-handling practices.
+      </p>
+    </section>
+
+    <section class="about-section">
+      <h2>Continuous Improvement</h2>
+
+      <p>
+        Media Tools is intended to evolve as user needs change. Suggestions
+        for additional utilities, improvements to existing tools, better
+        usability, new conversion options and broader file-format support
+        are valuable in deciding what could be improved. Feedback about
+        unexpected behaviour or technical difficulties can also help
+        identify areas that need attention.
+      </p>
+
+      <p>
+        Our aim is to keep the platform practical, accessible and convenient
+        while steadily improving its usefulness for everyday media and
+        document workflows.
+      </p>
+    </section>
+
+    <section class="about-section about-contact">
+      <h2>Contact Us and Share Your Suggestions</h2>
+
+      <p>
+        We welcome your feedback, suggestions and questions. If you have an
+        idea for a new tool, would like to recommend an improvement, discover
+        a problem with an existing feature or have a suggestion about the
+        overall website experience, please reach out to us.
+      </p>
+
+      <p>
+        You can contact us directly at
+        <a href="mailto:tradingcontentdrive@gmail.com">tradingcontentdrive@gmail.com</a>.
+        When reporting a technical issue, please mention the tool you were
+        using and describe what happened. Details about the expected result
+        and the actual result can help us understand the issue more clearly.
+        Please do not include passwords or other sensitive information in
+        your message.
+      </p>
+
+      <p>
+        Thank you for visiting Media Tools and taking the time to explore
+        the platform. We hope these utilities help you complete your
+        everyday media and document tasks more efficiently. Your feedback
+        can help us make the experience better for everyone.
+      </p>
+
+      <a href="/" class="about-home-button">Explore Media Tools</a>
+    </section>
+  </main>
+
+  <footer>© 2026 Media Tools. All rights reserved.</footer>
 </body>
 </html>
