@@ -38,9 +38,8 @@ RESET_PASSWORD_TTL_SECONDS = 900
 
 PASSWORD_RESET_URL = os.getenv(
     "PASSWORD_RESET_URL",
-    "http://192.168.0.151:5000/user/forgot-password",
+    f"{request.host_url.rstrip('/')}/user/forgot-password"
 )
-
 INCREMENT_LOGIN_FAILURE_SCRIPT = """
 local count = redis.call('INCR', KEYS[1])
 if count == 1 then
