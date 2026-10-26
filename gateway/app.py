@@ -2,7 +2,7 @@ import os
 import logging
 import requests
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request, Response, send_from_directory
+from flask import render_template, Flask, jsonify, request, Response, send_from_directory
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
@@ -545,7 +545,7 @@ def payment_submit():
 @app.route("/support-bot/<path:path>")
 def support_bot(path):
     import requests
-    from flask import Response, request
+    from flask import render_template, Response, request
 
     base_url = SERVICES["support-bot"]
     url = f"{base_url}/{path}"
@@ -671,7 +671,50 @@ def pdf_combiner_legacy_proxy(path):
             "error": "PDF Combiner service is unavailable."
         }), 502
 
+# Pdf converter
+@app.route("/pdf-converter", methods=["GET"])
+@app.route("/pdf-converter/", methods=["GET"])
+def pdf_converter_page():
+    return render_template("pdf-converter/index.html")
+@app.route("/pdf-converter/convert-file", methods=["POST"])
+def pdf_converter_route():
+    service_url = SERVICES["pdf-converter"].rstrip("/")
 
+    try:
+        files = {
+            name: (f.filename, f.stream, f.content_type)
+            for name, f in request.files.items()
+        }
+
+        response = requests.post(
+            f"{service_url}/convert-file",
+            files=files,
+            data=request.form,
+            timeout=240,
+        )
+
+        excluded = {
+            "content-encoding",
+            "content-length",
+            "transfer-encoding",
+            "connection",
+        }
+
+        headers = [
+            (k, v)
+            for k, v in response.headers.items()
+            if k.lower() not in excluded
+        ]
+
+        return Response(
+            response.content,
+            status=response.status_code,
+            headers=headers,
+        )
+
+    except requests.RequestException:
+        app.logger.exception("PDF converter service request failed")
+        return jsonify(error="PDF converter service is unavailable."), 502
 
 
 if __name__ == "__main__":
