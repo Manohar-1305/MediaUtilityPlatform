@@ -46,7 +46,5 @@ spec:
   ports:
     - name: http
       port: 5000
-      targetPort: 5000
-      nodePort: 30000
       targetPort: http
       nodePort: 30000
