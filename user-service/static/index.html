@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,7 +14,7 @@
             <h1 id="page-title">Create Account</h1>
             <p id="page-description">Create an account to get started.</p>
 
-            <div class="tabs" id="account-tabs">
+            <div class="tabs">
                 <button id="register-tab" type="button" onclick="showMode('register')">
                     Create Account
                 </button>
@@ -49,70 +48,34 @@
                 <input id="login-password" name="password" type="password"
                        autocomplete="current-password" required>
 
-                <p style="text-align:right; margin:12px 0 0;">
-                    <a href="/user/forgot-password">Forgot Password?</a>
-                </p>
-
                 <button class="submit-button" type="submit">Login</button>
             </form>
 
-            <form id="change-password-form" hidden>
-                <p>A temporary password was used. Set a new password to continue.</p>
-
-                <label for="change-current-password">Temporary Password</label>
-                <input id="change-current-password" name="current_password"
-                       type="password" autocomplete="current-password" required>
-
-                <label for="change-new-password">New Password</label>
-                <input id="change-new-password" name="new_password"
-                       type="password" autocomplete="new-password"
-                       minlength="8" required>
-
-                <label for="change-confirm-password">Confirm New Password</label>
-                <input id="change-confirm-password" name="confirm_password"
-                       type="password" autocomplete="new-password"
-                       minlength="8" required>
-
-                <button class="submit-button" type="submit">Change Password</button>
-            </form>
-
             <p id="message" role="status"></p>
-
-            <p style="text-align:center; margin-top:24px;">
-                <a href="/about/" class="about-link">About Media Tools</a>
-            </p>
         </section>
     </main>
 
     <script>
         const registerForm = document.getElementById("register-form");
         const loginForm = document.getElementById("login-form");
-        const changePasswordForm =
-            document.getElementById("change-password-form");
         const message = document.getElementById("message");
-        const accountTabs = document.getElementById("account-tabs");
-
-        let pendingUsername = "";
 
         function showMode(mode) {
-            registerForm.hidden = mode !== "register";
-            loginForm.hidden = mode !== "login";
-            changePasswordForm.hidden = true;
-            accountTabs.hidden = false;
+            const isLogin = mode === "login";
+
+            registerForm.hidden = isLogin;
+            loginForm.hidden = !isLogin;
 
             document.getElementById("page-title").textContent =
-                mode === "login" ? "Welcome Back" : "Create Account";
+                isLogin ? "Login" : "Create Account";
 
             document.getElementById("page-description").textContent =
-                mode === "login"
+                isLogin
                     ? "Sign in to your account."
                     : "Create an account to get started.";
 
-            document.getElementById("register-tab")
-                .classList.toggle("active", mode === "register");
-
-            document.getElementById("login-tab")
-                .classList.toggle("active", mode === "login");
+            document.getElementById("register-tab").classList.toggle("active", !isLogin);
+            document.getElementById("login-tab").classList.toggle("active", isLogin);
 
             message.textContent = "";
             message.className = "";
@@ -120,46 +83,6 @@
             const url = new URL(window.location.href);
             url.searchParams.set("mode", mode);
             window.history.replaceState({}, "", url);
-        }
-
-        function showChangePassword(username) {
-            pendingUsername = username;
-
-            registerForm.hidden = true;
-            loginForm.hidden = true;
-            changePasswordForm.hidden = false;
-            accountTabs.hidden = true;
-
-            document.getElementById("page-title").textContent =
-                "Change Your Password";
-
-            document.getElementById("page-description").textContent =
-                "Choose a new password before continuing.";
-
-            document.getElementById("change-current-password").value =
-                document.getElementById("login-password").value;
-
-            message.textContent =
-                "You must change your temporary password to continue.";
-            message.className = "";
-        }
-
-        async function postJson(endpoint, payload) {
-            const response = await fetch("/user/" + endpoint, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const result = await response.json().catch(() => ({}));
-
-            if (!response.ok) {
-                throw new Error(result.error || "Request failed");
-            }
-
-            return result;
         }
 
         async function submitForm(event, endpoint) {
@@ -172,21 +95,25 @@
             const payload = Object.fromEntries(new FormData(form).entries());
 
             try {
-                const result = await postJson(endpoint, payload);
+                const response = await fetch("/user/" + endpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || "Request failed");
+                }
 
                 if (endpoint === "login") {
-                    if (result.password_change_required === true) {
-                        showChangePassword(
-                            result.user?.username || payload.username
-                        );
-                        return;
-                    }
-
                     localStorage.setItem(
                         "mediaToolsUsername",
                         result.user.username
                     );
-
                     window.location.href = "/";
                     return;
                 }
@@ -212,65 +139,6 @@
             submitForm(event, "login")
         );
 
-        changePasswordForm.addEventListener("submit", async event => {
-            event.preventDefault();
-
-            const currentPassword =
-                document.getElementById("change-current-password").value;
-            const newPassword =
-                document.getElementById("change-new-password").value;
-            const confirmPassword =
-                document.getElementById("change-confirm-password").value;
-
-            if (newPassword.length < 8) {
-                message.textContent =
-                    "The new password must contain at least 8 characters.";
-                message.className = "error";
-                return;
-            }
-
-            if (newPassword !== confirmPassword) {
-                message.textContent = "The new passwords do not match.";
-                message.className = "error";
-                return;
-            }
-
-            if (newPassword === currentPassword) {
-                message.textContent =
-                    "Choose a password different from the temporary password.";
-                message.className = "error";
-                return;
-            }
-
-            message.textContent = "Updating password...";
-            message.className = "";
-
-            try {
-                await postJson("change-password", {
-                    username: pendingUsername ||
-                        document.getElementById("login-username").value.trim(),
-                    current_password: currentPassword,
-                    new_password: newPassword
-                });
-
-                changePasswordForm.reset();
-
-                message.textContent =
-                    "Password changed successfully. Please log in with your new password.";
-                message.className = "success";
-
-                showMode("login");
-                document.getElementById("login-username").value =
-                    pendingUsername;
-                document.getElementById("login-password").value = "";
-
-            } catch (error) {
-                message.textContent =
-                    error.message || "Unable to change the password.";
-                message.className = "error";
-            }
-        });
-
         const initialMode =
             new URLSearchParams(window.location.search).get("mode");
 
@@ -278,4 +146,3 @@
     </script>
 </body>
 </html>
-
