@@ -16,3 +16,6 @@ Root password: CHANGE_ROOT_PASSWORD
 
 
 for c in media-tools-gateway audio-cutter audio-joiner audio-to-video video-cutter user media-mysql; do echo "===== $c ====="; docker inspect -f 'Status={{.State.Status}} Network={{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' "$c" 2>/dev/null || echo "MISSING"; docker logs --tail 15 "$c" 2>&1; done; docker network inspect media-tools-network
+
+# validate the python file
+python3 -m py_compile /home/ubuntu/MediaUtilityPlatform/user-service/app.py
