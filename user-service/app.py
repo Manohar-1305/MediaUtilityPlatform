@@ -6,7 +6,6 @@ from email.message import EmailMessage
 from pathlib import Path
 from urllib.parse import urlencode
 
-
 import pymysql
 import redis
 from pymysql.cursors import DictCursor
@@ -36,6 +35,7 @@ redis_client = redis.Redis(
 MAX_LOGIN_ATTEMPTS = int(os.getenv("REDIS_LOGIN_MAX_ATTEMPTS", "5"))
 LOGIN_WINDOW_SECONDS = int(os.getenv("REDIS_LOGIN_WINDOW_SECONDS", "900"))
 RESET_PASSWORD_TTL_SECONDS = 900
+
 INCREMENT_LOGIN_FAILURE_SCRIPT = """
 local count = redis.call('INCR', KEYS[1])
 if count == 1 then
@@ -96,8 +96,24 @@ def send_temporary_password(email, temporary_password):
     if not gmail_username or not gmail_app_password:
         raise RuntimeError("Gmail SMTP credentials are not configured")
 
+    # Derive the public reset URL from the incoming browser request.
+    # The request is served through the user microservice gateway at /user.
+    origin = request.headers.get("Origin", "").rstrip("/")
+
+    if not origin:
+        referer = request.headers.get("Referer", "")
+        if referer:
+            from urllib.parse import urlsplit
+
+            parsed_referer = urlsplit(referer)
+            origin = f"{parsed_referer.scheme}://{parsed_referer.netloc}"
+
+    if not origin:
+        origin = request.host_url.rstrip("/")
+
+    reset_base_url = f"{origin}/user/forgot-password"
     reset_link = (
-        f"{PASSWORD_RESET_URL}?{urlencode({
+        f"{reset_base_url}?{urlencode({
             'mode': 'reset',
             'email': email,
         })}"
