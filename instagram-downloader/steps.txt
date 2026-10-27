@@ -1,0 +1,2 @@
+# Build & Run
+docker build -t instagram-downloader:v1 . && docker rm -f instagram-downloader 2>/dev/null; docker run -d --name instagram-downloader --network media-tools-network --restart unless-stopped -p 5019:5019 instagram-downloader:v1
