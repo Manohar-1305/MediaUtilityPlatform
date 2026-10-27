@@ -13,4 +13,4 @@ COPY templates/ ./templates/
 
 EXPOSE 5019
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5019", "--workers", "2", "--timeout", "300", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5019", "--workers", "2", "--timeout", "300", "--access-logfile", "-", "--error-logfile", "-", "--capture-output", "app:app"]
