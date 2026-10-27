@@ -1,177 +1,572 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Facebook Reel & Video Downloader</title>
-    <link rel="stylesheet" href="/facebook-downloader/static/style.css" />
-  </head>
-  <body>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: #f8fafc;
+            background:
+                radial-gradient(ellipse at 12% 15%, rgba(37, 99, 235, .25), transparent 38%),
+                radial-gradient(ellipse at 90% 85%, rgba(124, 58, 237, .24), transparent 40%),
+                linear-gradient(135deg, #07111f, #101b35 55%, #17152e);
+        }
+
+        .navbar {
+            width: 100%;
+            min-height: 82px;
+            padding: 18px 7%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, .1);
+            background: rgba(8, 15, 30, .55);
+            backdrop-filter: blur(16px);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #1877f2, #6657e8);
+            box-shadow: 0 8px 25px rgba(24, 119, 242, .3);
+            font-size: 27px;
+            font-weight: 800;
+        }
+
+        .home-button {
+            padding: 12px 20px;
+            border: 1px solid rgba(255, 255, 255, .2);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, .07);
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: .2s ease;
+        }
+
+        .home-button:hover {
+            background: rgba(255, 255, 255, .16);
+            transform: translateY(-2px);
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1050px;
+            margin: auto;
+            padding: 75px 24px 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            padding: 9px 16px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(96, 165, 250, .35);
+            border-radius: 30px;
+            background: rgba(59, 130, 246, .12);
+            color: #bfdbfe;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1.7px;
+        }
+
+        h1 {
+            max-width: 800px;
+            margin-bottom: 22px;
+            text-align: center;
+            font-size: clamp(36px, 6vw, 64px);
+            line-height: 1.14;
+            letter-spacing: -2px;
+        }
+
+        h1 span {
+            background: linear-gradient(90deg, #60a5fa, #a78bfa, #f0abfc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .subtitle {
+            max-width: 650px;
+            margin-bottom: 42px;
+            color: #a9b6cc;
+            font-size: 16px;
+            line-height: 1.8;
+            text-align: center;
+        }
+
+        .download-card {
+            width: 100%;
+            max-width: 760px;
+            padding: 32px;
+            border: 1px solid rgba(255, 255, 255, .14);
+            border-radius: 24px;
+            background: rgba(255, 255, 255, .065);
+            box-shadow: 0 25px 80px rgba(0, 0, 0, .28);
+            backdrop-filter: blur(20px);
+        }
+
+        .download-card label {
+            display: block;
+            margin-bottom: 13px;
+            color: #e5eaf5;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        input[type="url"] {
+            flex: 1;
+            min-width: 0;
+            padding: 17px 18px;
+            border: 1px solid rgba(255, 255, 255, .16);
+            border-radius: 13px;
+            outline: none;
+            background: rgba(5, 12, 27, .75);
+            color: #fff;
+            font-size: 14px;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        input[type="url"]::placeholder {
+            color: #75839b;
+        }
+
+        input[type="url"]:focus {
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 4px rgba(96, 165, 250, .12);
+        }
+
+        #downloadButton {
+            padding: 0 23px;
+            border: 0;
+            border-radius: 13px;
+            background: linear-gradient(135deg, #2878f0, #7058ed);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(65, 105, 225, .25);
+            transition: .2s ease;
+        }
+
+        #downloadButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(65, 105, 225, .4);
+        }
+
+        #downloadButton:disabled {
+            opacity: .6;
+            cursor: wait;
+            transform: none;
+        }
+
+        .hint {
+            margin-top: 14px;
+            color: #8594ac;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .privacy-note {
+            margin-top: 20px;
+            padding: 15px 17px;
+            border: 1px solid rgba(74, 222, 128, .25);
+            border-radius: 13px;
+            background: rgba(34, 197, 94, .08);
+            color: #bbf7d0;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .status {
+            display: none;
+            margin-top: 22px;
+            padding: 16px 18px;
+            border: 1px solid rgba(96, 165, 250, .22);
+            border-radius: 13px;
+            background: rgba(59, 130, 246, .1);
+            color: #dbeafe;
+            font-size: 14px;
+            line-height: 1.7;
+            overflow-wrap: anywhere;
+        }
+
+        .status.error {
+            border-color: rgba(248, 113, 113, .3);
+            background: rgba(239, 68, 68, .1);
+            color: #fecaca;
+        }
+
+        .status.success {
+            border-color: rgba(74, 222, 128, .3);
+            background: rgba(34, 197, 94, .1);
+            color: #bbf7d0;
+        }
+
+        .file-button {
+            display: inline-block;
+            margin-top: 13px;
+            padding: 12px 18px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #15803d, #16a34a);
+            color: #fff;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .file-button:hover {
+            background: #166534;
+        }
+
+        .features {
+            width: 100%;
+            max-width: 760px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 17px;
+            margin-top: 28px;
+        }
+
+        .feature {
+            padding: 24px 18px;
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, .045);
+            text-align: center;
+            transition: transform .2s, background .2s;
+        }
+
+        .feature:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, .075);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            display: grid;
+            place-items: center;
+            margin: 0 auto 16px;
+            border-radius: 15px;
+            background: rgba(96, 165, 250, .13);
+            color: #93c5fd;
+            font-size: 23px;
+        }
+
+        .feature h3 {
+            margin-bottom: 9px;
+            color: #f1f5f9;
+            font-size: 15px;
+        }
+
+        .feature p {
+            color: #8e9db5;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        footer {
+            padding: 24px 16px;
+            border-top: 1px solid rgba(255, 255, 255, .08);
+            color: #718099;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        @media (max-width: 650px) {
+            .navbar {
+                min-height: 70px;
+                padding: 14px 5%;
+            }
+
+            .brand {
+                gap: 9px;
+                font-size: 13px;
+            }
+
+            .brand-icon {
+                width: 38px;
+                height: 38px;
+                font-size: 23px;
+            }
+
+            .home-button {
+                padding: 10px 13px;
+                font-size: 12px;
+            }
+
+            .main-container {
+                padding: 52px 17px;
+            }
+
+            h1 {
+                letter-spacing: -1px;
+            }
+
+            .subtitle {
+                font-size: 14px;
+            }
+
+            .download-card {
+                padding: 22px;
+            }
+
+            .input-row {
+                flex-direction: column;
+            }
+
+            input[type="url"] {
+                width: 100%;
+                min-height: 52px;
+            }
+
+            #downloadButton {
+                min-height: 52px;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .feature {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                text-align: left;
+            }
+
+            .feature-icon {
+                flex-shrink: 0;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
     <header class="navbar">
-      <a class="brand" href="/">
-        <span class="brand-icon">f</span>
-        <span>Facebook Video Downloader</span>
-      </a>
-      <a class="home-button" href="/">&#8592; Home</a>
+        <a class="brand" href="/">
+            <span class="brand-icon">f</span>
+            <span>Facebook Video Downloader</span>
+        </a>
+        <a class="home-button" href="/">&#8592; Home</a>
     </header>
 
     <main class="main-container">
-      <div class="eyebrow">REELS &amp; VIDEOS</div>
+        <div class="eyebrow">REELS &amp; VIDEOS</div>
 
-      <h1>
-        Your favorite videos,<br />
-        <span>ready to download.</span>
-      </h1>
+        <h1>
+            Your favorite videos,<br>
+            <span>ready to download.</span>
+        </h1>
 
-      <p class="subtitle">
-        Paste a Facebook Reel or video link below to get started. Save videos
-        you own or have permission to download.
-      </p>
+        <p class="subtitle">
+            Paste a Facebook Reel or video link below to get started.
+            Save videos you own or have permission to download.
+        </p>
 
-      <section class="download-card">
-        <form id="downloadForm">
-          <label for="videoUrl">Facebook video URL</label>
+        <section class="download-card">
+            <form id="downloadForm">
+                <label for="videoUrl">Facebook video URL</label>
 
-          <div class="input-row">
-            <input
-              type="url"
-              id="videoUrl"
-              name="url"
-              placeholder="https://www.facebook.com/reel/..."
-              required
-            />
-            <button id="downloadButton" type="submit">
-              Download Video &#8594;
-            </button>
-          </div>
+                <div class="input-row">
+                    <input
+                        type="url"
+                        id="videoUrl"
+                        name="url"
+                        placeholder="https://www.facebook.com/reel/..."
+                        required
+                    >
+                    <button id="downloadButton" type="submit">
+                        Download Video &#8594;
+                    </button>
+                </div>
 
-          <p class="hint">Supports Facebook Reel and video links.</p>
-        </form>
+                <p class="hint">
+                    Supports Facebook Reel and video links.
+                </p>
+            </form>
 
-        <div id="status" class="status" role="status" aria-live="polite"></div>
-      </section>
+            <div class="privacy-note">
+                <strong>Privacy note:</strong> Your video is downloaded directly
+                through your browser. The website does not intentionally retain
+                a copy for you to retrieve later. Temporary processing may occur
+                on the server while the download is being prepared.
+            </div>
 
-      <section class="features">
-        <article class="feature">
-          <div class="feature-icon">&#8595;</div>
-          <div>
-            <h3>Easy Downloads</h3>
-            <p>Submit a video link and retrieve the available file.</p>
-          </div>
-        </article>
+            <div id="status" class="status" role="status" aria-live="polite"></div>
+        </section>
 
-        <article class="feature">
-          <div class="feature-icon">&#9881;</div>
-          <div>
-            <h3>Simple Process</h3>
-            <p>Paste the URL and check the download status.</p>
-          </div>
-        </article>
+        <section class="features">
+            <article class="feature">
+                <div class="feature-icon">&#8595;</div>
+                <div>
+                    <h3>Easy Downloads</h3>
+                    <p>Submit a video link and retrieve the available file.</p>
+                </div>
+            </article>
 
-        <article class="feature">
-          <div class="feature-icon">&#128274;</div>
-          <div>
-            <h3>Privacy Focused</h3>
-            <p>Download content you have permission to save.</p>
-          </div>
-        </article>
-      </section>
+            <article class="feature">
+                <div class="feature-icon">&#9881;</div>
+                <div>
+                    <h3>Simple Process</h3>
+                    <p>Paste the URL and check the download status.</p>
+                </div>
+            </article>
+
+            <article class="feature">
+                <div class="feature-icon">&#128274;</div>
+                <div>
+                    <h3>Privacy Focused</h3>
+                    <p>Download content you have permission to save.</p>
+                </div>
+            </article>
+        </section>
     </main>
 
-    <footer>Facebook Reel &amp; Video Downloader &copy; 2026</footer>
+    <footer>
+        Facebook Reel &amp; Video Downloader &copy; 2026
+    </footer>
 
     <script>
-      const form = document.getElementById("downloadForm");
-      const urlInput = document.getElementById("videoUrl");
-      const downloadButton = document.getElementById("downloadButton");
-      const statusBox = document.getElementById("status");
+        const form = document.getElementById("downloadForm");
+        const urlInput = document.getElementById("videoUrl");
+        const downloadButton = document.getElementById("downloadButton");
+        const statusBox = document.getElementById("status");
 
-      const API_BASE = "/facebook-downloader";
+        const API_BASE = "/facebook-downloader";
 
-      function showStatus(message, type = "") {
-        statusBox.style.display = "block";
-        statusBox.className = "status " + type;
-        statusBox.replaceChildren(document.createTextNode(message));
-      }
-
-      function addDownloadLink(url) {
-        const link = document.createElement("a");
-        link.className = "file-button";
-        link.href = url;
-        link.textContent = "Download File";
-        statusBox.appendChild(document.createElement("br"));
-        statusBox.appendChild(link);
-      }
-
-      async function readResponse(response) {
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(data.error || "The request failed.");
-        }
-        return data;
-      }
-
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-
-        const url = urlInput.value.trim();
-        if (!url) {
-          showStatus("Please enter a Facebook video URL.", "error");
-          return;
+        function showStatus(message, type = "") {
+            statusBox.style.display = "block";
+            statusBox.className = "status " + type;
+            statusBox.replaceChildren(document.createTextNode(message));
         }
 
-        downloadButton.disabled = true;
-        downloadButton.textContent = "Processing...";
-        showStatus("Submitting your video link...");
+        function addDownloadLink(url) {
+            const link = document.createElement("a");
+            link.className = "file-button";
+            link.href = url;
+            link.textContent = "Download File";
+            statusBox.appendChild(document.createElement("br"));
+            statusBox.appendChild(link);
+        }
 
-        try {
-          const response = await fetch(`${API_BASE}/download`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url }),
-          });
+        async function readResponse(response) {
+            const data = await response.json().catch(() => ({}));
 
-          const job = await readResponse(response);
-          showStatus("Download started. Checking video status...");
-
-          for (let attempt = 0; attempt < 100; attempt++) {
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-
-            const statusResponse = await fetch(
-              `${API_BASE}/status/${encodeURIComponent(job.job_id)}`,
-            );
-            const current = await readResponse(statusResponse);
-
-            if (current.status === "completed") {
-              showStatus(
-                `Video is ready (${(current.size_bytes / 1048576).toFixed(2)} MB).`,
-                "success",
-              );
-              addDownloadLink(
-                `${API_BASE}/file/${encodeURIComponent(job.job_id)}`,
-              );
-              return;
+            if (!response.ok) {
+                throw new Error(data.error || "The request failed.");
             }
 
-            if (["failed", "rejected"].includes(current.status)) {
-              throw new Error(current.error || "Download failed.");
+            return data;
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                showStatus("Please enter a Facebook video URL.", "error");
+                return;
             }
 
-            showStatus(
-              current.status === "queued"
-                ? "Your download is queued..."
-                : "Downloading video. Please wait...",
-            );
-          }
+            downloadButton.disabled = true;
+            downloadButton.textContent = "Processing...";
+            showStatus("Submitting your video link...");
 
-          throw new Error("Download timed out. Please try again.");
-        } catch (error) {
-          showStatus(error.message || "Unable to process this video.", "error");
-        } finally {
-          downloadButton.disabled = false;
-          downloadButton.textContent = "Download Video →";
-        }
-      });
+            try {
+                const response = await fetch(`${API_BASE}/download`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ url })
+                });
+
+                const job = await readResponse(response);
+                showStatus("Download started. Checking video status...");
+
+                for (let attempt = 0; attempt < 100; attempt++) {
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+
+                    const statusResponse = await fetch(
+                        `${API_BASE}/status/${encodeURIComponent(job.job_id)}`
+                    );
+
+                    const current = await readResponse(statusResponse);
+
+                    if (current.status === "completed") {
+                        showStatus(
+                            `Video is ready (${(current.size_bytes / 1048576).toFixed(2)} MB).`,
+                            "success"
+                        );
+
+                        addDownloadLink(
+                            `${API_BASE}/file/${encodeURIComponent(job.job_id)}`
+                        );
+                        return;
+                    }
+
+                    if (["failed", "rejected"].includes(current.status)) {
+                        throw new Error(current.error || "Download failed.");
+                    }
+
+                    showStatus(
+                        current.status === "queued"
+                            ? "Your download is queued..."
+                            : "Downloading video. Please wait..."
+                    );
+                }
+
+                throw new Error("Download timed out. Please try again.");
+
+            } catch (error) {
+                showStatus(
+                    error.message || "Unable to process this video.",
+                    "error"
+                );
+            } finally {
+                downloadButton.disabled = false;
+                downloadButton.textContent = "Download Video →";
+            }
+        });
     </script>
-  </body>
+</body>
 </html>
