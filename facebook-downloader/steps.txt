@@ -1,0 +1,6 @@
+
+# Build & Run
+docker build -t facebook-downloader:v1 . && docker rm -f facebook-downloader 2>/dev/null; docker run -d --name facebook-downloader --network media-tools-network --restart unless-stopped -p 5018:5018 facebook-downloader:v1
+
+# Tag and push
+docker tag facebook-downloader:v1 manoharshetty507/facebook-downloader:v1 && docker push manoharshetty507/facebook-downloader:v1
