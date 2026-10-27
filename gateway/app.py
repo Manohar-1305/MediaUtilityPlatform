@@ -720,6 +720,43 @@ def pdf_converter_route():
         app.logger.exception("PDF converter service request failed")
         return jsonify(error="PDF converter service is unavailable."), 502
 
+# faebook download
+@app.route("/facebook-downloader/", defaults={"path": ""}, methods=["GET", "POST"])
+@app.route("/facebook-downloader/<path:path>", methods=["GET", "POST"])
+def facebook_downloader_proxy(path):
+    import requests
+    from flask import Response
+
+    backend_url = SERVICES["facebook-downloader"].rstrip("/")
+
+    if not path:
+        return requests.get(
+            f"{backend_url}/",
+            timeout=10
+        ).text, 200, {"Content-Type": "text/html"}
+
+    response = requests.request(
+        method=request.method,
+        url=f"{backend_url}/{path}",
+        params=request.args,
+        json=request.get_json(silent=True) if request.is_json else None,
+        timeout=(10, 330),
+        stream=True
+    )
+
+    excluded = {"content-encoding", "content-length", "transfer-encoding", "connection"}
+    headers = [
+        (key, value)
+        for key, value in response.headers.items()
+        if key.lower() not in excluded
+    ]
+
+    return Response(
+        response.iter_content(chunk_size=8192),
+        status=response.status_code,
+        headers=headers
+    )
+
 
 if __name__ == "__main__":
     app.run(
