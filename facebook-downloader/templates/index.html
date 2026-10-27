@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Facebook Reel & Video Downloader</title>
+    <link rel="stylesheet" href="/facebook-downloader/static/style.css" />
+  </head>
+  <body>
+    <header class="navbar">
+      <a class="brand" href="/">
+        <span class="brand-icon">f</span>
+        <span>Facebook Video Downloader</span>
+      </a>
+      <a class="home-button" href="/">&#8592; Home</a>
+    </header>
+
+    <main class="main-container">
+      <div class="eyebrow">REELS &amp; VIDEOS</div>
+
+      <h1>
+        Your favorite videos,<br />
+        <span>ready to download.</span>
+      </h1>
+
+      <p class="subtitle">
+        Paste a Facebook Reel or video link below to get started. Save videos
+        you own or have permission to download.
+      </p>
+
+      <section class="download-card">
+        <form id="downloadForm">
+          <label for="videoUrl">Facebook video URL</label>
+
+          <div class="input-row">
+            <input
+              type="url"
+              id="videoUrl"
+              name="url"
+              placeholder="https://www.facebook.com/reel/..."
+              required
+            />
+            <button id="downloadButton" type="submit">
+              Download Video &#8594;
+            </button>
+          </div>
+
+          <p class="hint">Supports Facebook Reel and video links.</p>
+        </form>
+
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+      </section>
+
+      <section class="features">
+        <article class="feature">
+          <div class="feature-icon">&#8595;</div>
+          <div>
+            <h3>Easy Downloads</h3>
+            <p>Submit a video link and retrieve the available file.</p>
+          </div>
+        </article>
+
+        <article class="feature">
+          <div class="feature-icon">&#9881;</div>
+          <div>
+            <h3>Simple Process</h3>
+            <p>Paste the URL and check the download status.</p>
+          </div>
+        </article>
+
+        <article class="feature">
+          <div class="feature-icon">&#128274;</div>
+          <div>
+            <h3>Privacy Focused</h3>
+            <p>Download content you have permission to save.</p>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer>Facebook Reel &amp; Video Downloader &copy; 2026</footer>
+
+    <script>
+      const form = document.getElementById("downloadForm");
+      const urlInput = document.getElementById("videoUrl");
+      const downloadButton = document.getElementById("downloadButton");
+      const statusBox = document.getElementById("status");
+
+      const API_BASE = "/facebook-downloader";
+
+      function showStatus(message, type = "") {
+        statusBox.style.display = "block";
+        statusBox.className = "status " + type;
+        statusBox.replaceChildren(document.createTextNode(message));
+      }
+
+      function addDownloadLink(url) {
+        const link = document.createElement("a");
+        link.className = "file-button";
+        link.href = url;
+        link.textContent = "Download File";
+        statusBox.appendChild(document.createElement("br"));
+        statusBox.appendChild(link);
+      }
+
+      async function readResponse(response) {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error || "The request failed.");
+        }
+        return data;
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const url = urlInput.value.trim();
+        if (!url) {
+          showStatus("Please enter a Facebook video URL.", "error");
+          return;
+        }
+
+        downloadButton.disabled = true;
+        downloadButton.textContent = "Processing...";
+        showStatus("Submitting your video link...");
+
+        try {
+          const response = await fetch(`${API_BASE}/download`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url }),
+          });
+
+          const job = await readResponse(response);
+          showStatus("Download started. Checking video status...");
+
+          for (let attempt = 0; attempt < 100; attempt++) {
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+
+            const statusResponse = await fetch(
+              `${API_BASE}/status/${encodeURIComponent(job.job_id)}`,
+            );
+            const current = await readResponse(statusResponse);
+
+            if (current.status === "completed") {
+              showStatus(
+                `Video is ready (${(current.size_bytes / 1048576).toFixed(2)} MB).`,
+                "success",
+              );
+              addDownloadLink(
+                `${API_BASE}/file/${encodeURIComponent(job.job_id)}`,
+              );
+              return;
+            }
+
+            if (["failed", "rejected"].includes(current.status)) {
+              throw new Error(current.error || "Download failed.");
+            }
+
+            showStatus(
+              current.status === "queued"
+                ? "Your download is queued..."
+                : "Downloading video. Please wait...",
+            );
+          }
+
+          throw new Error("Download timed out. Please try again.");
+        } catch (error) {
+          showStatus(error.message || "Unable to process this video.", "error");
+        } finally {
+          downloadButton.disabled = false;
+          downloadButton.textContent = "Download Video →";
+        }
+      });
+    </script>
+  </body>
+</html>
