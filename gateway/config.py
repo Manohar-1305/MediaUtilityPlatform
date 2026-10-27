@@ -19,5 +19,6 @@ SERVICES = {
     "payment": os.getenv("PAYMENT_URL", "http://payment:5016"),
     "support-bot": os.getenv("SUPPORT_BOT_URL", "http://support-bot:5017"),
     "facebook-downloader": os.getenv("FACEBOOK_DOWNLOADER_URL","http://facebook-downloader:5018"),
+    "instagram-downloader": os.getenv("INSTAGRAM_DOWNLOADER_URL","http://instagram-downloader:5019"),
     
 }
