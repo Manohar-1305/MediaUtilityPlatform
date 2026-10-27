@@ -757,6 +757,60 @@ def facebook_downloader_proxy(path):
         headers=headers
     )
 
+# instagram download
+@app.route(
+    "/instagram-downloader/",
+    defaults={"path": ""},
+    methods=["GET", "POST"]
+)
+@app.route(
+    "/instagram-downloader/<path:path>",
+    methods=["GET", "POST"]
+)
+def instagram_downloader_proxy(path):
+    import requests
+    from flask import Response
+
+    backend_url = SERVICES["instagram-downloader"].rstrip("/")
+
+    if not path and request.method == "GET":
+        response = requests.get(
+            f"{backend_url}/",
+            timeout=15
+        )
+    else:
+        response = requests.request(
+            method=request.method,
+            url=f"{backend_url}/{path}" if path else f"{backend_url}/",
+            params=request.args,
+            data=request.get_data() if request.method != "GET" else None,
+            headers={
+                key: value
+                for key, value in request.headers
+                if key.lower() in ("content-type", "accept")
+            },
+            timeout=(15, 330),
+            stream=True
+        )
+
+    excluded_headers = {
+        "content-encoding",
+        "content-length",
+        "transfer-encoding",
+        "connection",
+    }
+
+    headers = [
+        (key, value)
+        for key, value in response.headers.items()
+        if key.lower() not in excluded_headers
+    ]
+
+    return Response(
+        response.iter_content(chunk_size=8192),
+        status=response.status_code,
+        headers=headers
+    )
 
 if __name__ == "__main__":
     app.run(
